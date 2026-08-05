@@ -1,8 +1,48 @@
-# Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regional store managers. Users upload an existing store performance or audit PDF or DOCX along with one or more current retail shelf photos. The system produces a concise one-page narrative executive brief, analyzes shelf images for visible product availability, count, and placement issues, combines report context with current visual observations to identify recurring or important problems, prioritizes issues, and recommends corrective actions for the manager.
+# Retail Store Performance and Shelf Audit Assistant
 
 Agentic workflow architecture exported from **[Agentic LaunchPad](https://github.com)** by Affine Analytics.
 
-> This repository is a scaffold generated from an interactive architecture interview and visual workflow builder. Implement each agent step per the plan below.
+AI-powered assistant for regional store managers: upload an audit report (PDF/DOCX) and current shelf photos to receive a one-page executive brief, prioritized issues, drill-down evidence, and corrective action recommendations.
+
+## Quickstart
+
+```bash
+git clone https://github.com/affine-Nikhil-Sarwal/build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f.git
+cd build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env — set AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT
+python main.py --health
+python main.py --dry-run
+python main.py --file examples/sample_audit.pdf --image examples/sample_shelf.jpg
+```
+
+### HTTP API
+
+```bash
+python main.py --serve
+curl -s http://localhost:8000/health
+curl -s -X POST http://localhost:8000/audit/intake \
+  -F "report=@examples/sample_audit.pdf" \
+  -F "shelf_photos=@examples/sample_shelf.jpg"
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AZURE_OPENAI_API_KEY` | Yes (live) | Azure OpenAI API key |
+| `AZURE_OPENAI_ENDPOINT` | Yes (live) | Azure OpenAI endpoint URL |
+| `AZURE_OPENAI_DEPLOYMENT` | Yes (live) | Chat/vision deployment name |
+| `AZURE_OPENAI_VISION_DEPLOYMENT` | No | Separate vision deployment (defaults to chat deployment) |
+| `AZURE_OPENAI_TOKEN_PARAM` | No | Override token budget kwarg: `max_tokens` or `max_completion_tokens` |
+| `UPLOAD_ROOT` | No | Local upload directory (default: `data/uploads`) |
+| `ROBOFLOW_API_KEY` | No | Optional Roboflow row detection |
+| `AZURE_STORAGE_CONNECTION_STRING` | No | Optional Azure Blob storage |
+
+---
 
 ## At a glance
 
