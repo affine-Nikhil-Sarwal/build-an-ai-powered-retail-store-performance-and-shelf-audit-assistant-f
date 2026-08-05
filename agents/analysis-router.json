@@ -1,0 +1,29 @@
+{
+  "id": "analysis-router",
+  "label": "Analysis Router",
+  "type": "gateway",
+  "agentId": null,
+  "description": "Route the request into document, vision, or unified processing paths based on uploaded inputs.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Analysis Router",
+    "role_in_workflow": "Analysis Router is a gateway step. Receives from Upload Intake. Passes to Document Brief Extractor, Shelf Image Quality Gate, Document Brief Extractor, Shelf Image Quality Gate.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Upload Intake"
+    ],
+    "feeds_into": [
+      "Document Brief Extractor",
+      "Shelf Image Quality Gate",
+      "Document Brief Extractor",
+      "Shelf Image Quality Gate"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Route the request into document, vision, or unified processing paths based on uploaded inputs."
+  },
+  "status": "scaffold"
+}
