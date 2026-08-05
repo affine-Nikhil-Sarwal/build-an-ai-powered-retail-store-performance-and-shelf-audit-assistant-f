@@ -1,0 +1,27 @@
+{
+  "id": "document-brief-extractor",
+  "label": "Document Brief Extractor",
+  "type": "agent",
+  "agentId": null,
+  "description": "Extract text from uploaded PDF/DOCX and produce a concise structured summary of prior audit findings.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Document Brief Extractor",
+    "role_in_workflow": "Document Brief Extractor is a agent step. Receives from Analysis Router, Analysis Router. Passes to Findings Normalization.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Analysis Router",
+      "Analysis Router"
+    ],
+    "feeds_into": [
+      "Findings Normalization"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Extract text from uploaded PDF/DOCX and produce a concise structured summary of prior audit findings."
+  },
+  "status": "scaffold"
+}
