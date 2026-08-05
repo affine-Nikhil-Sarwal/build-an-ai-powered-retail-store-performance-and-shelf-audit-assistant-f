@@ -1,0 +1,32 @@
+{
+  "session_id": "session-1785925042706-xpjtx7",
+  "jobs": [
+    {
+      "session_id": "session-1785925042706-xpjtx7",
+      "status": "published",
+      "success": true,
+      "scaffold_dir": "C:\\Projectss\\Agentic-LaunchPad\\backend\\data\\generated\\session-1785925042706-xpjtx7",
+      "node_count": 12,
+      "cursor_agent_id": null,
+      "cursor_run_id": null,
+      "planner_agent_id": null,
+      "planner_run_id": null,
+      "repo_url": "https://github.com/affine-Nikhil-Sarwal/build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f",
+      "repo_branch": "main",
+      "base_branch": "main",
+      "pr_url": null,
+      "github_owner": "affine-Nikhil-Sarwal",
+      "github_repo": "build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f",
+      "attempt_count": 0,
+      "github_artifacts_synced": false,
+      "error": null,
+      "warnings": [],
+      "reuse_violations": [],
+      "created_at": "2026-08-05T11:09:09.272625+00:00",
+      "updated_at": "2026-08-05T11:09:09.274167+00:00",
+      "finished_at": "2026-08-05T11:09:09.274167+00:00",
+      "job_id": "affine-nikhil-sarwal/build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f:2026-08-05T11:09:09.272625+00:00",
+      "output_dir": "C:\\Projectss\\Agentic-LaunchPad\\backend\\data\\generated\\session-1785925042706-xpjtx7"
+    }
+  ]
+}
