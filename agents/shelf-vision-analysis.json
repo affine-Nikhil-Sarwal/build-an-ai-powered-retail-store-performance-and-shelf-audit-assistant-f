@@ -1,0 +1,26 @@
+{
+  "id": "shelf-vision-analysis",
+  "label": "Shelf Vision Analysis",
+  "type": "agent",
+  "agentId": "planogram_vision_agent_chain",
+  "description": "Analyze shelf photos for visible availability, count, and placement issues using row-aware vision reasoning.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": "Planogram Vision Agent Chain",
+  "rationale": "matched Planogram Vision Agent Chain",
+  "explanation": {
+    "purpose": "Shelf Vision Analysis",
+    "role_in_workflow": "Shelf Vision Analysis is a agent step. Receives from Shelf Row Detection. Passes to Findings Normalization.",
+    "why_it_exists": "matched Planogram Vision Agent Chain",
+    "consumes_from": [
+      "Shelf Row Detection"
+    ],
+    "feeds_into": [
+      "Findings Normalization"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Analyze shelf photos for visible availability, count, and placement issues using row-aware vision reasoning."
+  },
+  "status": "scaffold"
+}
