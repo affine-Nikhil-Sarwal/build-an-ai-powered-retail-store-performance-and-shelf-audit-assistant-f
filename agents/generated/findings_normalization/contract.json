@@ -1,0 +1,5 @@
+{
+  "agent_name": "findings_normalization",
+  "node_id": "findings-normalization",
+  "entrypoint": "agents.generated.findings_normalization.agent:run"
+}

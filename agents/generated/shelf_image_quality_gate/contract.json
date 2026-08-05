@@ -1,0 +1,5 @@
+{
+  "agent_name": "shelf_image_quality_gate",
+  "node_id": "shelf-image-quality-gate",
+  "entrypoint": "agents.generated.shelf_image_quality_gate.agent:run"
+}

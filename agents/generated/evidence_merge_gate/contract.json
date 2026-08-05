@@ -1,0 +1,5 @@
+{
+  "agent_name": "evidence_merge_gate",
+  "node_id": "evidence-merge-gate",
+  "entrypoint": "agents.generated.evidence_merge_gate.agent:run"
+}

@@ -1,0 +1,5 @@
+{
+  "agent_name": "shelf_row_detection",
+  "node_id": "shelf-row-detection",
+  "entrypoint": "agents.generated.shelf_row_detection.agent:run"
+}

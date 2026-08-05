@@ -1,0 +1,5 @@
+{
+  "agent_name": "manager_drilldown_output",
+  "node_id": "manager-drilldown-output",
+  "entrypoint": "agents.generated.manager_drilldown_output.agent:run"
+}

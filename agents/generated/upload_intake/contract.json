@@ -1,0 +1,5 @@
+{
+  "agent_name": "upload_intake",
+  "node_id": "upload-intake",
+  "entrypoint": "agents.generated.upload_intake.agent:run"
+}

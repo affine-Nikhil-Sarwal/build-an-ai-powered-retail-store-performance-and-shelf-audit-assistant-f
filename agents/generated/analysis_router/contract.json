@@ -1,0 +1,5 @@
+{
+  "agent_name": "analysis_router",
+  "node_id": "analysis-router",
+  "entrypoint": "agents.generated.analysis_router.agent:run"
+}

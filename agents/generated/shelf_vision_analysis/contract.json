@@ -1,0 +1,5 @@
+{
+  "agent_name": "shelf_vision_analysis",
+  "node_id": "shelf-vision-analysis",
+  "entrypoint": "agents.generated.shelf_vision_analysis.agent:run"
+}

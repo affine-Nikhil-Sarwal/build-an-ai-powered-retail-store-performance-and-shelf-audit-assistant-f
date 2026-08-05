@@ -1,0 +1,5 @@
+{
+  "agent_name": "evidence_confidence_check",
+  "node_id": "evidence-confidence-check",
+  "entrypoint": "agents.generated.evidence_confidence_check.agent:run"
+}

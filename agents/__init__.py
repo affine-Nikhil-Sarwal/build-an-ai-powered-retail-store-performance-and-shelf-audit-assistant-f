@@ -40,7 +40,7 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent_library.base.metadata import IOField, IOFieldType
+from agents.base.metadata import IOField, IOFieldType
 
 T = TypeVar("T")
 

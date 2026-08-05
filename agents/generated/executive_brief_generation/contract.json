@@ -1,0 +1,5 @@
+{
+  "agent_name": "executive_brief_generation",
+  "node_id": "executive-brief-generation",
+  "entrypoint": "agents.generated.executive_brief_generation.agent:run"
+}

@@ -1,0 +1,5 @@
+{
+  "agent_name": "document_brief_extractor",
+  "node_id": "document-brief-extractor",
+  "entrypoint": "agents.generated.document_brief_extractor.agent:run"
+}

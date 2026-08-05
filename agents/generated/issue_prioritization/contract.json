@@ -1,0 +1,5 @@
+{
+  "agent_name": "issue_prioritization",
+  "node_id": "issue-prioritization",
+  "entrypoint": "agents.generated.issue_prioritization.agent:run"
+}

@@ -1,46 +1,61 @@
-"""Intake routes for the generated workflow — included by main.py."""
+"""HTTP routes for retail shelf audit intake and health."""
 
 from __future__ import annotations
 
+import asyncio
 import re
 import shutil
+import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, UploadFile
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 
-from run_workflow import run_workflow_from_node
+from config.settings import get_settings
+from orchestrator.graph import run_workflow_from_node
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 router = APIRouter()
 
 
-class WorkflowPayload(BaseModel):
-    """JSON body accepted by intake endpoints."""
+@router.get("/health")
+async def health() -> JSONResponse:
+    from main import _integration_health
 
-    data: dict[str, Any] = Field(default_factory=dict)
+    report = await _integration_health(dry_run=False)
+    status_code = 200 if report.get("status") == "ok" else 503
+    if report.get("failures"):
+        report["reason"] = "; ".join(report["failures"])
+    return JSONResponse(status_code=status_code, content=report)
 
-FILE_ROUTE_RUNTIME_DEPENDENCIES = ("python-multipart",)
 
+@router.post("/audit/intake", tags=["intake"])
+async def audit_intake(
+    report: UploadFile = File(...),
+    shelf_photos: list[UploadFile] = File(...),
+) -> dict[str, Any]:
+    """Multipart intake: one audit report plus one or more shelf photos."""
+    if not shelf_photos:
+        raise HTTPException(status_code=422, detail="At least one shelf photo is required")
 
-@router.post("/upload", tags=["intake"], summary='Upload Intake')
-async def upload_intake(file: UploadFile = File(...)) -> dict[str, Any]:
-    """Start the workflow at node 'upload-intake' and return its result."""
-    uploads_dir = APP_ROOT / "uploads"
-    uploads_dir.mkdir(parents=True, exist_ok=True)
-    original_name = file.filename or "upload.bin"
-    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(original_name).name).strip("._")
-    if not safe_name:
-        safe_name = "upload.bin"
-    saved_path = uploads_dir / f"upload-intake-{safe_name}"
-    with saved_path.open("wb") as out_file:
-        shutil.copyfileobj(file.file, out_file)
-    return run_workflow_from_node(
-        'upload-intake',
-        {
-            "filename": file.filename,
-            "content_type": file.content_type,
-            "file_path": str(saved_path),
-        },
-    )
+    settings = get_settings(dry_run=False)
+    uploads = settings.upload_path() / "http"
+    uploads.mkdir(parents=True, exist_ok=True)
+
+    def _save(upload: UploadFile, prefix: str) -> str:
+        original = upload.filename or "upload.bin"
+        safe = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(original).name).strip("._") or "upload.bin"
+        dest = uploads / f"{prefix}-{uuid.uuid4().hex}-{safe}"
+        with dest.open("wb") as out:
+            shutil.copyfileobj(upload.file, out)
+        return str(dest.resolve())
+
+    document_path = _save(report, "report")
+    image_paths = [_save(photo, "shelf") for photo in shelf_photos]
+
+    payload = {
+        "document_paths": [document_path],
+        "image_paths": image_paths,
+    }
+    return await asyncio.to_thread(run_workflow_from_node, "upload-intake", payload)
