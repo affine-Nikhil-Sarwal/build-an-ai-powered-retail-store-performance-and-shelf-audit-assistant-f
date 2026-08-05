@@ -1,0 +1,27 @@
+{
+  "id": "findings-normalization",
+  "label": "Findings Normalization",
+  "type": "custom",
+  "agentId": null,
+  "description": "Normalize document and image findings into a shared issue schema with linked evidence references.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Findings Normalization",
+    "role_in_workflow": "Findings Normalization is a custom step. Receives from Document Brief Extractor, Shelf Vision Analysis. Passes to Evidence Merge Gate.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Document Brief Extractor",
+      "Shelf Vision Analysis"
+    ],
+    "feeds_into": [
+      "Evidence Merge Gate"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Normalize document and image findings into a shared issue schema with linked evidence references."
+  },
+  "status": "scaffold"
+}
