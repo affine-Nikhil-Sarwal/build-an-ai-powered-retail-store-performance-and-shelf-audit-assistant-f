@@ -1,0 +1,26 @@
+{
+  "id": "shelf-row-detection",
+  "label": "Shelf Row Detection",
+  "type": "agent",
+  "agentId": null,
+  "description": "Detect shelf products and row-level visual regions to prepare structured inputs for shelf analysis.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Shelf Row Detection",
+    "role_in_workflow": "Shelf Row Detection is a agent step. Receives from Shelf Image Quality Gate. Passes to Shelf Vision Analysis.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Shelf Image Quality Gate"
+    ],
+    "feeds_into": [
+      "Shelf Vision Analysis"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Detect shelf products and row-level visual regions to prepare structured inputs for shelf analysis."
+  },
+  "status": "scaffold"
+}
