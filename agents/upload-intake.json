@@ -1,0 +1,26 @@
+{
+  "id": "upload-intake",
+  "label": "Upload Intake",
+  "type": "agent",
+  "agentId": null,
+  "description": "Accept report documents and shelf photos, perform intake checks, and register the job.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Upload Intake",
+    "role_in_workflow": "Upload Intake is a agent step. Receives from Workflow entry. Passes to Analysis Router.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Workflow entry"
+    ],
+    "feeds_into": [
+      "Analysis Router"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Accept report documents and shelf photos, perform intake checks, and register the job."
+  },
+  "status": "scaffold"
+}
