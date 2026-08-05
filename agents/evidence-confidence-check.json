@@ -1,0 +1,26 @@
+{
+  "id": "evidence-confidence-check",
+  "label": "Evidence Confidence Check",
+  "type": "agent",
+  "agentId": null,
+  "description": "Reconcile cross-source evidence, flag conflicts, and score groundedness and confidence for each issue.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Evidence Confidence Check",
+    "role_in_workflow": "Evidence Confidence Check is a agent step. Receives from Evidence Merge Gate. Passes to Issue Prioritization.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Evidence Merge Gate"
+    ],
+    "feeds_into": [
+      "Issue Prioritization"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Reconcile cross-source evidence, flag conflicts, and score groundedness and confidence for each issue."
+  },
+  "status": "scaffold"
+}
