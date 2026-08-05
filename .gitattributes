@@ -1,0 +1,2 @@
+# Frozen reuse packages — always LF (matches reuse_seed_manifest hashing)
+agent_library/reuse/** text eol=lf
