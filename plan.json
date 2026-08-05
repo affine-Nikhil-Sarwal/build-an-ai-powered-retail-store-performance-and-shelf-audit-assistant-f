@@ -1,7 +1,7 @@
 {
   "metadata": {
     "planner_version": "1.0",
-    "generated_at": "2026-08-05T11:12:19Z",
+    "generated_at": "2026-08-05T11:22:52Z",
     "workflow_id": "session-1785925042706-xpjtx7",
     "project_name": "Retail Store Performance and Shelf Audit Assistant"
   },
@@ -9,9 +9,10 @@
     "problem_statement": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regional store managers. Users upload an existing store performance or audit PDF or DOCX along with one or more current retail shelf photos. The system produces a concise one-page narrative executive brief, analyzes shelf images for visible product availability, count, and placement issues, combines report context with current visual observations to identify recurring or important problems, prioritizes issues, and recommends corrective actions for the manager.",
     "tech_stack": {
       "language": "Python 3.11+",
-      "framework": "FastAPI (backend) + React (frontend UI)",
+      "framework": "FastAPI (backend) + React (optional frontend UI)",
       "key_libraries": [
         "pydantic",
+        "pydantic-settings",
         "uvicorn",
         "python-multipart",
         "httpx",
@@ -21,8 +22,10 @@
         "Pillow",
         "opencv-python-headless",
         "openai (Azure OpenAI SDK)",
+        "ag2 (AutoGen compat)",
         "pytest",
-        "pytest-asyncio"
+        "pytest-asyncio",
+        "structlog"
       ]
     },
     "acceptance_criteria": [
@@ -60,12 +63,12 @@
   "assumptions": [
     {
       "topic": "Reuse classification",
-      "assumption": "All 12 workflow nodes are classified as build because workflow.json reuse_decisions mark every node as build (including shelf-vision-analysis downgraded from planogram_vision_agent_chain) and agents/reused/ contains no seeded packages.",
-      "reason": "Authoritative workflow payload reuse_decisions and empty agents/reused/ directory in the cloned repository."
+      "assumption": "All 12 workflow nodes are classified as build because the authoritative workflow payload reuse_decisions mark every node as build (including shelf-vision-analysis downgraded from planogram_vision_agent_chain) and agents/reused/ contains no seeded packages.",
+      "reason": "workflow.json reuse_decisions and empty agents/reused/ directory in the cloned repository."
     },
     {
       "topic": "Storage backend",
-      "assumption": "Document and image upload/storage use local filesystem under data/uploads/{job_id}/ with optional Azure Blob when AZURE_STORAGE_CONNECTION_STRING is configured.",
+      "assumption": "Document and image upload/storage use local filesystem under data/uploads/{job_id}/ via integrations/local_storage.py, with optional Azure Blob when AZURE_STORAGE_CONNECTION_STRING is configured.",
       "reason": "integrations_catalog is empty; spec lists upload/storage integrations without mandating a specific cloud vendor."
     },
     {
@@ -97,6 +100,11 @@
       "topic": "Default analysis route",
       "assumption": "When both a report document and one or more shelf photos are supplied, analysis-router selects vision_then_unified and the orchestrator runs document and vision branches concurrently.",
       "reason": "Primary workflow data_flow and conditional branches in graph; inputs require both modalities."
+    },
+    {
+      "topic": "Project layout",
+      "assumption": "Generated code follows the flat scaffold layout already present in the repo (config/, integrations/, orchestrator/, api/, agents/generated/) rather than an app/ package prefix.",
+      "reason": "Cloned repository structure uses root-level modules; workflow.json tech_stack lists Python/FastAPI."
     }
   ],
   "file_layout": [
@@ -105,16 +113,16 @@
       "purpose": "Pinned Python dependencies for backend, integrations, and tests"
     },
     {
-      "path": "pyproject.toml",
-      "purpose": "Project metadata and pytest configuration"
+      "path": "pytest.ini",
+      "purpose": "Pytest configuration"
     },
     {
       "path": "main.py",
-      "purpose": "CLI entrypoint supporting --dry-run and workflow invocation without live external calls"
+      "purpose": "FastAPI application with Request-ID middleware, GET /health, multipart intake route, CLI --dry-run support"
     },
     {
       "path": "run_workflow.py",
-      "purpose": "Programmatic workflow runner with run_workflow_from_node and _json_safe serialization"
+      "purpose": "Programmatic workflow runner exporting run_workflow and run_workflow_from_node with json_safe serialization"
     },
     {
       "path": "README.md",
@@ -122,291 +130,211 @@
     },
     {
       "path": ".env.example",
-      "purpose": "Documented environment variables for Azure OpenAI, optional Roboflow, optional Azure Blob, storage paths"
+      "purpose": "Documented environment variables for Azure OpenAI, optional Roboflow, optional Azure Blob, UPLOAD_ROOT"
     },
     {
       "path": "scripts/check_placeholders.py",
       "purpose": "CI guard rejecting TODO/pass/NotImplementedError placeholders in business logic"
     },
     {
-      "path": "app/__init__.py",
-      "purpose": "Application package marker"
+      "path": "config/settings.py",
+      "purpose": "Pydantic settings from .env; raises ConfigurationError when required live credentials missing"
     },
     {
-      "path": "app/config.py",
-      "purpose": "Settings from environment; raises ConfigurationError when required live credentials missing"
+      "path": "config/azure_openai_token_param.py",
+      "purpose": "Per-deployment max_tokens vs max_completion_tokens detect-and-retry cache"
     },
     {
-      "path": "app/errors.py",
-      "purpose": "Typed ConfigurationError and domain exceptions"
+      "path": "config/autogen_azure_compat.py",
+      "purpose": "AutoGen/Azure OpenAI compatibility shim applied before agent invocations"
     },
     {
-      "path": "app/logging.py",
-      "purpose": "Structured logging with request_id context"
+      "path": "config/llm_json.py",
+      "purpose": "Shared LLM JSON parsing helpers"
     },
     {
-      "path": "app/middleware/request_id.py",
-      "purpose": "X-Request-ID middleware for inbound UUID or passthrough header"
-    },
-    {
-      "path": "app/api/__init__.py",
-      "purpose": "API package marker"
-    },
-    {
-      "path": "app/api/app.py",
-      "purpose": "FastAPI application factory and router mounting"
-    },
-    {
-      "path": "app/api/routes/health.py",
-      "purpose": "GET /health calling integration health_check() methods; 200 or 503 with reason"
-    },
-    {
-      "path": "app/api/routes/audit.py",
-      "purpose": "Multipart POST /audit/intake for report + shelf photos; triggers full workflow"
-    },
-    {
-      "path": "app/api/schemas.py",
-      "purpose": "HTTP response models; no raw bytes in JSON payloads"
-    },
-    {
-      "path": "app/schemas/__init__.py",
-      "purpose": "Shared workflow contract models export"
-    },
-    {
-      "path": "app/schemas/upload.py",
-      "purpose": "ValidatedUploadPackage and intake metadata models"
-    },
-    {
-      "path": "app/schemas/routing.py",
-      "purpose": "AnalysisRouterDecision and branch flags"
-    },
-    {
-      "path": "app/schemas/findings.py",
-      "purpose": "ReportFindings, VisualFindings, NormalizedIssue, evidence reference types"
-    },
-    {
-      "path": "app/schemas/evidence.py",
-      "purpose": "MergedEvidenceSet, ScoredIssue, confidence and conflict models"
-    },
-    {
-      "path": "app/schemas/output.py",
-      "purpose": "ExecutiveBrief, PrioritizedIssue, DrillDownView, final workflow response"
-    },
-    {
-      "path": "app/integrations/__init__.py",
-      "purpose": "Integration registry"
-    },
-    {
-      "path": "app/integrations/base.py",
+      "path": "integrations/base.py",
       "purpose": "Integration protocol with health_check() returning underlying errors"
     },
     {
-      "path": "app/integrations/local_storage.py",
+      "path": "integrations/local_storage.py",
       "purpose": "Document/image persist-to-disk client with health_check on writable upload root"
     },
     {
-      "path": "app/integrations/document_extractor.py",
+      "path": "integrations/document_extractor.py",
       "purpose": "PDF/DOCX text extraction via PyMuPDF and python-docx; OCR quality scoring"
     },
     {
-      "path": "app/integrations/azure_openai.py",
-      "purpose": "Azure OpenAI chat/vision client with max_tokens detect-and-retry cache"
+      "path": "integrations/azure_openai.py",
+      "purpose": "Azure OpenAI chat/vision client with token-param detect-and-retry"
     },
     {
-      "path": "app/integrations/vision_quality.py",
+      "path": "integrations/vision_quality.py",
       "purpose": "OpenCV blur/brightness/obstruction heuristics plus optional vision LLM validation"
     },
     {
-      "path": "app/integrations/row_detector.py",
+      "path": "integrations/row_detector.py",
       "purpose": "Shelf row and product region detection (heuristic default; optional Roboflow when configured)"
     },
     {
-      "path": "app/integrations/policy_validator.py",
+      "path": "integrations/policy_validator.py",
       "purpose": "Compliance/policy validation for uploaded file types, sizes, and retail advisory-only rules"
     },
     {
-      "path": "app/orchestrator/__init__.py",
-      "purpose": "Orchestrator package marker"
+      "path": "orchestrator/graph.py",
+      "purpose": "Graph executor honoring analysis_type branches, parallel document/vision fan-out, adapter wiring, json_safe return"
     },
     {
-      "path": "app/orchestrator/state.py",
-      "purpose": "Mutable WorkflowState accumulating node outputs and path references"
+      "path": "workflow_manifest.json",
+      "purpose": "Node execution order and entrypoint registry written by orchestrator"
     },
     {
-      "path": "app/orchestrator/workflow.py",
-      "purpose": "Graph executor honoring analysis_type branches and parallel document/vision fan-out"
-    },
-    {
-      "path": "app/orchestrator/registry.py",
-      "purpose": "Maps node_id to agent callables"
-    },
-    {
-      "path": "app/adapters/__init__.py",
-      "purpose": "Adapter package for cross-node I/O transforms"
-    },
-    {
-      "path": "app/adapters/vision_input_adapter.py",
-      "purpose": "Maps shelf-row-detection output to shelf-vision-analysis inputs"
-    },
-    {
-      "path": "app/adapters/normalization_adapter.py",
-      "purpose": "Maps report_findings and visual_findings into normalized issue schema"
-    },
-    {
-      "path": "app/adapters/drilldown_adapter.py",
-      "purpose": "Enriches manager-drilldown-output with evidence paths from workflow state"
-    },
-    {
-      "path": "app/utils/json_safe.py",
-      "purpose": "_json_safe helper stripping bytes from orchestrator and HTTP responses"
+      "path": "utils/json_safe.py",
+      "purpose": "json_safe helper stripping bytes from orchestrator and HTTP responses"
     },
     {
       "path": "agents/base/metadata.py",
-      "purpose": "Existing IOField types — keep unchanged"
+      "purpose": "Shared IOField metadata types for agent contracts"
+    },
+    {
+      "path": "agents/adapters/vision_input_adapter.py",
+      "purpose": "Maps shelf-row-detection output to shelf-vision-analysis inputs"
+    },
+    {
+      "path": "agents/adapters/normalization_adapter.py",
+      "purpose": "Maps report_findings and visual_findings into findings-normalization inputs"
+    },
+    {
+      "path": "agents/adapters/drilldown_adapter.py",
+      "purpose": "Injects orchestrator workflow_context for manager-drilldown-output"
     },
     {
       "path": "agents/generated/upload_intake/agent.py",
       "purpose": "Upload Intake node implementation"
     },
     {
-      "path": "agents/generated/upload_intake/contract.py",
-      "purpose": "Upload Intake input/output Pydantic contracts"
+      "path": "agents/generated/upload_intake/contract.json",
+      "purpose": "Upload Intake entrypoint metadata"
     },
     {
       "path": "agents/generated/analysis_router/agent.py",
       "purpose": "Analysis Router gateway implementation"
     },
     {
-      "path": "agents/generated/analysis_router/contract.py",
-      "purpose": "Analysis Router contracts"
+      "path": "agents/generated/analysis_router/contract.json",
+      "purpose": "Analysis Router entrypoint metadata"
     },
     {
       "path": "agents/generated/document_brief_extractor/agent.py",
       "purpose": "Document Brief Extractor node implementation"
     },
     {
-      "path": "agents/generated/document_brief_extractor/contract.py",
-      "purpose": "Document Brief Extractor contracts"
+      "path": "agents/generated/document_brief_extractor/contract.json",
+      "purpose": "Document Brief Extractor entrypoint metadata"
     },
     {
       "path": "agents/generated/shelf_image_quality_gate/agent.py",
       "purpose": "Shelf Image Quality Gate node implementation"
     },
     {
-      "path": "agents/generated/shelf_image_quality_gate/contract.py",
-      "purpose": "Shelf Image Quality Gate contracts"
+      "path": "agents/generated/shelf_image_quality_gate/contract.json",
+      "purpose": "Shelf Image Quality Gate entrypoint metadata"
     },
     {
       "path": "agents/generated/shelf_row_detection/agent.py",
       "purpose": "Shelf Row Detection node implementation"
     },
     {
-      "path": "agents/generated/shelf_row_detection/contract.py",
-      "purpose": "Shelf Row Detection contracts"
+      "path": "agents/generated/shelf_row_detection/contract.json",
+      "purpose": "Shelf Row Detection entrypoint metadata"
     },
     {
       "path": "agents/generated/shelf_vision_analysis/agent.py",
-      "purpose": "Shelf Vision Analysis node — build replacement for unavailable planogram_vision_agent_chain"
+      "purpose": "Shelf Vision Analysis — build replacement for unavailable planogram_vision_agent_chain"
     },
     {
-      "path": "agents/generated/shelf_vision_analysis/contract.py",
-      "purpose": "Shelf Vision Analysis contracts"
+      "path": "agents/generated/shelf_vision_analysis/contract.json",
+      "purpose": "Shelf Vision Analysis entrypoint metadata"
     },
     {
       "path": "agents/generated/findings_normalization/agent.py",
       "purpose": "Findings Normalization custom node"
     },
     {
-      "path": "agents/generated/findings_normalization/contract.py",
-      "purpose": "Findings Normalization contracts"
+      "path": "agents/generated/findings_normalization/contract.json",
+      "purpose": "Findings Normalization entrypoint metadata"
     },
     {
       "path": "agents/generated/evidence_merge_gate/agent.py",
       "purpose": "Evidence Merge Gate gateway implementation"
     },
     {
-      "path": "agents/generated/evidence_merge_gate/contract.py",
-      "purpose": "Evidence Merge Gate contracts"
+      "path": "agents/generated/evidence_merge_gate/contract.json",
+      "purpose": "Evidence Merge Gate entrypoint metadata"
     },
     {
       "path": "agents/generated/evidence_confidence_check/agent.py",
       "purpose": "Evidence Confidence Check node implementation"
     },
     {
-      "path": "agents/generated/evidence_confidence_check/contract.py",
-      "purpose": "Evidence Confidence Check contracts"
+      "path": "agents/generated/evidence_confidence_check/contract.json",
+      "purpose": "Evidence Confidence Check entrypoint metadata"
     },
     {
       "path": "agents/generated/issue_prioritization/agent.py",
       "purpose": "Issue Prioritization custom node"
     },
     {
-      "path": "agents/generated/issue_prioritization/contract.py",
-      "purpose": "Issue Prioritization contracts"
+      "path": "agents/generated/issue_prioritization/contract.json",
+      "purpose": "Issue Prioritization entrypoint metadata"
     },
     {
       "path": "agents/generated/executive_brief_generation/agent.py",
       "purpose": "Executive Brief Generation node implementation"
     },
     {
-      "path": "agents/generated/executive_brief_generation/contract.py",
-      "purpose": "Executive Brief Generation contracts"
+      "path": "agents/generated/executive_brief_generation/contract.json",
+      "purpose": "Executive Brief Generation entrypoint metadata"
     },
     {
       "path": "agents/generated/manager_drilldown_output/agent.py",
       "purpose": "Manager Drill-down Output node implementation"
     },
     {
-      "path": "agents/generated/manager_drilldown_output/contract.py",
-      "purpose": "Manager Drill-down Output contracts"
+      "path": "agents/generated/manager_drilldown_output/contract.json",
+      "purpose": "Manager Drill-down Output entrypoint metadata"
+    },
+    {
+      "path": "api/routes.py",
+      "purpose": "Optional supplementary intake routes; main intake may live in main.py"
     },
     {
       "path": "tests/conftest.py",
       "purpose": "Pytest fixtures with dry-run settings and temp upload dirs"
     },
     {
-      "path": "tests/test_health.py",
-      "purpose": "Health endpoint tests"
-    },
-    {
-      "path": "tests/test_upload_intake.py",
-      "purpose": "Intake validation and persistence tests"
-    },
-    {
-      "path": "tests/test_analysis_router.py",
-      "purpose": "Routing logic and has_image override tests"
-    },
-    {
-      "path": "tests/test_workflow_dry_run.py",
-      "purpose": "End-to-end dry-run orchestration without live Azure calls"
-    },
-    {
       "path": "tests/test_json_safe.py",
       "purpose": "Bytes stripping from workflow outputs"
     },
     {
-      "path": "tests/fixtures/sample_audit.pdf",
+      "path": "tests/test_workflow_integration.py",
+      "purpose": "End-to-end dry-run orchestration, router, intake, and health tests"
+    },
+    {
+      "path": "examples/sample_audit.pdf",
       "purpose": "Minimal PDF fixture for document extraction tests"
-    },
-    {
-      "path": "tests/fixtures/sample_shelf.jpg",
-      "purpose": "Minimal shelf image fixture for quality and routing tests"
-    },
-    {
-      "path": "frontend/package.json",
-      "purpose": "React UI dependencies"
-    },
-    {
-      "path": "frontend/src/App.tsx",
-      "purpose": "Upload form and results view for managers"
-    },
-    {
-      "path": "frontend/src/api/client.ts",
-      "purpose": "Calls backend multipart intake and displays brief plus drill-down"
     },
     {
       "path": "data/uploads/.gitkeep",
       "purpose": "Ensures local upload directory exists"
+    },
+    {
+      "path": "frontend/package.json",
+      "purpose": "Optional React UI dependencies for manager upload and results view"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "purpose": "Optional upload form and drill-down results display"
     }
   ],
   "nodes": [
@@ -420,15 +348,27 @@
           "fields": [
             {
               "name": "documents_pdf_docx",
-              "type": "file",
+              "type": "file|path",
               "required": true,
-              "description": "One audit/performance report as PDF or DOCX; persisted to disk, output carries path reference only"
+              "description": "One audit/performance report as PDF or DOCX"
             },
             {
               "name": "one_or_more_current_retail_shelf_photos",
-              "type": "array[file]",
+              "type": "array[file|path]",
               "required": true,
-              "description": "One or more shelf photo files (JPEG/PNG/WebP); persisted to disk, output carries path references only"
+              "description": "One or more shelf photo files (JPEG/PNG/WebP)"
+            },
+            {
+              "name": "document_paths",
+              "type": "array[path]",
+              "required": false,
+              "description": "Alternate intake: pre-persisted document paths"
+            },
+            {
+              "name": "image_paths",
+              "type": "array[path]",
+              "required": false,
+              "description": "Alternate intake: pre-persisted image paths"
             }
           ]
         },
@@ -438,7 +378,7 @@
               "name": "validated_upload_package",
               "type": "object",
               "required": true,
-              "description": "Job envelope with job_id, document_paths[], image_paths[], content_types, storage_root, submitted_at, policy_check_passed, policy_violations[]"
+              "description": "job_id, document_paths[], image_paths[], content_types, storage_root, submitted_at, policy_check_passed, policy_violations[]"
             }
           ]
         },
@@ -446,8 +386,8 @@
           "Require at least one PDF/DOCX and at least one image per primary workflow spec",
           "Validate allowed MIME types and max file sizes via policy_validator integration",
           "Never emit raw bytes in output; only path/URL references",
-          "Register job in orchestrator state under a UUID job_id",
-          "Advisory-only compliance check: block disallowed file types and log policy notes; do not assign tasks"
+          "Register job under UUID job_id in data/uploads/{job_id}/",
+          "Advisory-only compliance check: block disallowed file types; do not assign tasks"
         ],
         "error_handling": "Return structured validation errors for missing/invalid files; raise ConfigurationError if storage root is not writable; do not proceed to analysis-router on hard policy failure.",
         "dependencies": []
@@ -466,7 +406,7 @@
               "name": "validated_upload_package",
               "type": "object",
               "required": true,
-              "description": "Output from upload-intake"
+              "description": "Output from upload-intake with document_paths and image_paths"
             },
             {
               "name": "documents_pdf_docx",
@@ -476,7 +416,7 @@
             },
             {
               "name": "one_or_more_current_retail_shelf_photos",
-              "type": "array[file]",
+              "type": "array",
               "required": false,
               "description": "Original image references; presence forces vision-inclusive routing"
             }
@@ -545,10 +485,16 @@
               "description": "Contains document_paths"
             },
             {
+              "name": "run_document_path",
+              "type": "boolean",
+              "required": false,
+              "description": "From analysis-router; node skipped when false"
+            },
+            {
               "name": "analysis_type",
               "type": "string",
               "required": false,
-              "description": "From analysis-router; node skipped when run_document_path is false"
+              "description": "Routing context from analysis-router"
             }
           ]
         },
@@ -565,7 +511,7 @@
         "business_rules": [
           "Support PDF via PyMuPDF and DOCX via python-docx",
           "Use LLM to summarize prior findings into structured prior_findings[] citing report excerpts only",
-          "Mark ocr_quality poor when extracted text is below length threshold or garbled; downstream must treat as low confidence",
+          "Mark ocr_quality poor when extracted text is below length threshold or garbled",
           "Report provides historical context only — not authoritative current shelf state",
           "Skip gracefully returning empty prior_findings when run_document_path is false"
         ],
@@ -591,10 +537,16 @@
               "description": "Contains image_paths"
             },
             {
+              "name": "run_vision_path",
+              "type": "boolean",
+              "required": false,
+              "description": "From analysis-router; node skipped when false"
+            },
+            {
               "name": "analysis_type",
               "type": "string",
               "required": false,
-              "description": "From analysis-router; node skipped when run_vision_path is false"
+              "description": "Routing context from analysis-router"
             }
           ]
         },
@@ -657,11 +609,11 @@
         "business_rules": [
           "Operate only on images marked usable",
           "Write row crop artifacts to storage alongside job_id; output path references only",
-          "Use row_detector integration (heuristic segmentation default; Roboflow when ROBOFLOW_* env configured)",
+          "Use row_detector integration (heuristic segmentation default; Roboflow when ROBOFLOW_API_KEY configured)",
           "Detection granularity at brand/category level, not SKU",
           "No-op with empty arrays when no usable images"
         ],
-        "error_handling": "Per-image detection failures log warning and skip image; do not fail entire job unless integration misconfigured (ConfigurationError).",
+        "error_handling": "Per-image detection failures log warning and skip image; raise ConfigurationError only when integration is misconfigured.",
         "dependencies": [
           "shelf-image-quality-gate"
         ]
@@ -686,14 +638,13 @@
               "name": "products",
               "type": "array",
               "required": true,
-              "description": "Product bounding boxes per row"
+              "description": "Product bounding boxes per row for prompt context"
             },
             {
               "name": "audit_query",
               "type": "string",
               "required": false,
-              "description": "Fixed retail audit prompt describing visible availability, count, placement checks",
-              "default": "Identify visible stock-outs, low facings, misplaced products, and empty shelf gaps. Only report what is visibly evident."
+              "description": "Fixed retail audit prompt; default describes visible availability, count, placement checks"
             }
           ]
         },
@@ -821,6 +772,12 @@
               "type": "object",
               "required": true,
               "description": "Merged issues from evidence-merge-gate"
+            },
+            {
+              "name": "ocr_quality",
+              "type": "string",
+              "required": false,
+              "description": "Optional passthrough from report_findings for confidence downgrade"
             }
           ]
         },
@@ -970,7 +927,7 @@
               "name": "workflow_context",
               "type": "object",
               "required": true,
-              "description": "Orchestrator-injected state: prioritized_issues, scored_issues, merged_evidence_set, validated_upload_package, usable_shelf_images — required for evidence views though not listed in graph I/O stubs"
+              "description": "Orchestrator-injected: prioritized_issues, scored_issues, merged_evidence_set, validated_upload_package, usable_shelf_images"
             }
           ]
         },
@@ -992,7 +949,7 @@
               "name": "issue_level_drill_down_with_side_by_side_photo_evidence_and_report_excerpts",
               "type": "array",
               "required": true,
-              "description": "Per issue: photo_path refs, crop thumbnails URLs/paths, report_excerpt, conflict_notes, side_by_side layout metadata"
+              "description": "Per issue: photo_path refs, crop paths, report_excerpt, conflict_notes, side_by_side layout metadata"
             },
             {
               "name": "free_form_corrective_action_recommendations",
@@ -1004,7 +961,7 @@
               "name": "confidence_notes_and_insufficient_evidence_flags",
               "type": "object",
               "required": true,
-              "description": "Structured object with overall_confidence, per_issue flags, rejected_image_paths[], ocr_quality_notes — NOT a scalar despite stub type"
+              "description": "Structured object with overall_confidence, per_issue flags, rejected_image_paths[], ocr_quality_notes — NOT a scalar despite LaunchPad stub type=number"
             }
           ]
         },
@@ -1012,7 +969,7 @@
           "Side-by-side evidence view pairs photo path/crop with matching report excerpt when available",
           "Surface all insufficient_evidence and conflict flags prominently",
           "Use path/URL references for images in JSON — never embed raw bytes",
-          "Apply _json_safe before HTTP serialization",
+          "Apply json_safe before HTTP serialization",
           "Deliver directly to manager without HITL review step"
         ],
         "error_handling": "Missing evidence artifacts render as explicit 'evidence unavailable' placeholders, not fabricated excerpts.",
@@ -1042,43 +999,43 @@
       "from": "upload-intake",
       "to": "analysis-router",
       "adapter_needed": false,
-      "notes": "validated_upload_package passes directly; orchestrator stores under WorkflowState."
+      "notes": "validated_upload_package passes directly; orchestrator accumulates state."
     },
     {
       "from": "analysis-router",
       "to": "document-brief-extractor",
       "adapter_needed": true,
-      "notes": "Orchestrator conditional adapter skips document-brief-extractor when run_document_path=false (vision_only path); must not invoke node or pass empty stub findings."
+      "notes": "Orchestrator skips document-brief-extractor when run_document_path=false (vision_only path); must not invoke node or fabricate stub findings."
     },
     {
       "from": "analysis-router",
       "to": "shelf-image-quality-gate",
       "adapter_needed": true,
-      "notes": "Orchestrator conditional adapter skips vision branch when run_vision_path=false (unified_only path)."
+      "notes": "Orchestrator skips vision branch when run_vision_path=false (unified_only path)."
     },
     {
       "from": "analysis-router",
       "to": "document-brief-extractor",
       "adapter_needed": true,
-      "notes": "For vision_then_unified, orchestrator runs document-brief-extractor and shelf-image-quality-gate concurrently via asyncio.gather after routing; generation_order is linear but runtime fan-out is parallel."
+      "notes": "For vision_then_unified, orchestrator runs document-brief-extractor and shelf-image-quality-gate concurrently via ThreadPoolExecutor after routing; generation_order is linear but runtime fan-out is parallel."
     },
     {
       "from": "shelf-row-detection",
       "to": "shelf-vision-analysis",
       "adapter_needed": true,
-      "notes": "vision_input_adapter maps detected_rows[] crop_path values to ordered image_paths list and injects fixed audit_query; maps products[] into row metadata for prompt context. Replaces unavailable planogram_vision_agent_chain wiring."
+      "notes": "vision_input_adapter maps detected_rows[] and products[] and injects fixed audit_query. Replaces unavailable planogram_vision_agent_chain wiring (expects user_query + image_paths row crops)."
     },
     {
       "from": "document-brief-extractor",
       "to": "findings-normalization",
       "adapter_needed": true,
-      "notes": "normalization_adapter converts report_findings.prior_findings[] into NormalizedIssue entries with source=report; handles absent input on vision_only path."
+      "notes": "normalization_adapter passes report_findings; findings-normalization agent converts prior_findings[] into NormalizedIssue entries with source=report. Handles absent input on vision_only path."
     },
     {
       "from": "shelf-vision-analysis",
       "to": "findings-normalization",
       "adapter_needed": true,
-      "notes": "normalization_adapter converts visual_findings.issues[] into NormalizedIssue entries with source=photo and evidence_refs pointing to image_path/row_index."
+      "notes": "normalization_adapter passes visual_findings; findings-normalization agent converts visual_findings.issues[] into NormalizedIssue entries with source=photo and evidence_refs pointing to image_path/row_index."
     },
     {
       "from": "findings-normalization",
@@ -1096,23 +1053,25 @@
       "from": "issue-prioritization",
       "to": "manager-drilldown-output",
       "adapter_needed": true,
-      "notes": "Orchestrator retains prioritized_issues and actions in WorkflowState for drilldown_adapter; not a direct edge in graph but required for final output contracts."
+      "notes": "Orchestrator retains prioritized_issues and actions in state for drilldown_adapter and final output; not a direct graph edge but required for final output contracts."
     }
   ],
   "risks_or_gaps": [
-    "agents/reused/ is empty — planogram_vision_agent_chain was catalog-matched but downgraded to build; shelf-vision-analysis must be implemented from scratch without frozen reuse source to copy.",
+    "agents/reused/ is empty — planogram_vision_agent_chain was catalog-matched but downgraded to build; shelf-vision-analysis must be implemented from scratch without frozen reuse source.",
     "session.json reuse_decisions mark shelf-vision-analysis as reuse while workflow payload reuse_decisions mark it build — payload downgrade is authoritative for this plan.",
     "integrations_catalog is empty — all integration clients (Azure OpenAI, storage, OCR, row detection) must be designed from spec.integrations list only.",
     "nodes_detail manager-drilldown-output declares confidence_notes_and_insufficient_evidence_flags as type number; plan treats it as structured object — schema mismatch in LaunchPad export.",
-    "Graph I/O for manager-drilldown-output omits evidence state needed for side-by-side views — requires orchestrator context injection adapter.",
+    "Graph I/O for manager-drilldown-output omits evidence state needed for side-by-side views — requires orchestrator workflow_context injection via drilldown_adapter.",
     "Unresolved spec questions remain open: exact priority formula weights, SKU vs brand detection level, retention/access control for uploaded store documents and photos.",
-    "Optional Roboflow row detection depends on credentials not defined in scaffold — heuristic fallback required for dry-run and offline tests.",
-    "React frontend scope is minimal in scaffold; full manager UI polish may exceed initial codegen unless scoped to upload + results display only.",
+    "Optional Roboflow row detection depends on ROBOFLOW_API_KEY not defined in scaffold — heuristic fallback required for dry-run and offline tests.",
+    "React frontend is listed in tech_stack but not present in scaffold; initial codegen may deliver API-only with optional minimal frontend.",
+    "Current api/routes.py POST /upload accepts a single file and does not match the dual document+photos multipart intake required by spec — codegen must implement correct multipart intake in main.py.",
+    "README architecture summary claims 9 of 12 nodes reused but actual reuse_decisions are all build — documentation drift only, not a codegen blocker.",
     "Advisory: node 'analysis-router' output field(s) 'reason' are never referenced as inputs by any downstream node.",
     "Advisory: node 'manager-drilldown-output' output field(s) 'confidence_notes_and_insufficient_evidence_flags', 'free_form_corrective_action_recommendations', 'issue_level_drill_down_with_side_by_side_photo_evidence_and_report_excerpts', 'one_page_narrative_executive_brief', 'prioritized_issue_list' are never referenced as inputs by any downstream node."
   ],
   "implementation_prompt": {
     "version": "1.0",
-    "content": "Build a runnable Python FastAPI + React project implementing the Retail Store Performance and Shelf Audit Assistant workflow (session-1785925042706-xpjtx7). Follow generation_order exactly. All 12 nodes are BUILD nodes — agents/reused/ is empty and must remain untouched.\n\n## 1. Foundation first\nCreate app/config.py loading env vars (AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT, optional AZURE_OPENAI_VISION_DEPLOYMENT, optional ROBOFLOW_API_KEY, UPLOAD_ROOT, optional AZURE_STORAGE_CONNECTION_STRING). Missing required live credentials raise app.errors.ConfigurationError — never mock silently. Implement scripts/check_placeholders.py scanning agents/generated and app/ for TODO/pass/NotImplementedError in business logic.\n\nImplement integrations under app/integrations/ each with health_check() surfacing real underlying API errors: local_storage, document_extractor, azure_openai (with max_completion_tokens vs max_tokens detect-and-retry on 400 unsupported_parameter and per-deployment process cache; honor AZURE_OPENAI_TOKEN_PARAM override), vision_quality, row_detector, policy_validator.\n\nAdd Request-ID middleware (UUID or inbound X-Request-ID on state, logs, response header). Add app/utils/json_safe.py _json_safe stripping bytes from dict/list outputs.\n\n## 2. Shared schemas\nDefine Pydantic models in app/schemas/: ValidatedUploadPackage, AnalysisRouterDecision, ReportFindings, UsableShelfImages, DetectedRow, DetectedProduct, VisualFindings, NormalizedIssue/NormalizedFindings, MergedEvidenceSet, ScoredIssue/ScoredIssues, PrioritizedIssue, ActionRecommendation, BriefDraft, WorkflowFinalOutput. Use these consistently across agents.\n\n## 3. Node implementations (generation_order)\n\n### 3.1 upload-intake (agents/generated/upload_intake/)\nImplement run(input) accepting document and image path references. Validate PDF/DOCX + image types via policy_validator. Persist to data/uploads/{job_id}/ using local_storage. Return validated_upload_package with path refs only — never bytes.\n\n### 3.2 analysis-router (agents/generated/analysis_router/)\nImplement LLM-based classification into vision_then_unified | unified_only | vision_only with keyword/regex fallback on dry_run or LLM failure. has_image/non-empty image_paths MUST force vision-inclusive route. Emit run_document_path and run_vision_path booleans.\n\n### 3.3 document-brief-extractor (agents/generated/document_brief_extractor/)\nExtract text via document_extractor. LLM summarizes prior_findings[] grounded in extracted text. Assess ocr_quality. Skip/no-op when run_document_path=false.\n\n### 3.4 shelf-image-quality-gate (agents/generated/shelf_image_quality_gate/)\nScore images with vision_quality integration. Mark insufficient_evidence for blur/dark/obstructed/partial. Continue with usable subset. Skip when run_vision_path=false.\n\n### 3.5 shelf-row-detection (agents/generated/shelf_row_detection/)\nRun row_detector on usable images. Output detected_rows with crop_path refs and products with bboxes. Write crops to storage.\n\n### 3.6 shelf-vision-analysis (agents/generated/shelf_vision_analysis/)\nBuild from scratch (planogram_vision_agent_chain package unavailable). Use azure_openai vision over row crops in order. Emit visual_findings issues for visible stock-outs, facings/count problems, placement issues. visible_only=true on all issues. No planogram comparison.\n\n### 3.7 findings-normalization (agents/generated/findings_normalization/)\nMerge report and visual streams into NormalizedIssue schema with evidence_refs. Handle single-branch input.\n\n### 3.8 evidence-merge-gate (agents/generated/evidence_merge_gate/)\nMerge issues; current photos override report on present-state conflicts. Flag date/area mismatches and cross-photo inconsistencies.\n\n### 3.9 evidence-confidence-check (agents/generated/evidence_confidence_check/)\nScore confidence, groundedness, conflicts. Mark insufficient_evidence. Gate ready_for_synthesis.\n\n### 3.10 issue-prioritization (agents/generated/issue_prioritization/)\nDeterministic priority_score using severity, photo authority, recurrence, confidence. Emit prioritized_issues and actions (advisory only).\n\n### 3.11 executive-brief-generation (agents/generated/executive_brief_generation/)\nLLM generates one-page brief_draft and recommendations grounded in prioritized issues only.\n\n### 3.12 manager-drilldown-output (agents/generated/manager_drilldown_output/)\nAssemble all five final outputs. Use drilldown_adapter injecting workflow_context from orchestrator (prioritized_issues, scored_issues, merged_evidence_set, upload package, usable_shelf_images) for side-by-side photo/report evidence views. confidence_notes_and_insufficient_evidence_flags is a structured object.\n\n## 4. Orchestrator (app/orchestrator/workflow.py)\nRegister all nodes in registry.py. Execute in generation_order but fan-out document-brief-extractor and shelf-image-quality-gate in parallel when analysis_type=vision_then_unified. Honor run_document_path/run_vision_path skip flags. Accumulate WorkflowState for drilldown_adapter. Apply _json_safe on all returns from run_workflow_from_node.\n\nImplement adapters: vision_input_adapter (shelf-row-detection → shelf-vision-analysis), normalization_adapter (both findings sources → findings-normalization), drilldown_adapter (state enrichment → manager-drilldown-output).\n\n## 5. HTTP API\nFastAPI app with GET /health calling all integration health_check() methods (200 ok, 503 with reason). POST multipart /audit/intake using only File/Form/UploadFile params — no Pydantic body alongside files. Persist uploads then run workflow. Wrap sync node calls in await asyncio.to_thread(...).\n\n## 6. CLI\nmain.py --dry-run validates config shape and runs workflow with fixtures without live Azure calls. run_workflow.py exposes run_workflow() and run_workflow_from_node().\n\n## 7. Tests\npytest suite covering health, intake validation, router has_image override, dry-run end-to-end, json_safe bytes stripping. Tests must pass without live external services.\n\n## 8. Frontend (minimal React)\nUpload form posting multipart to /audit/intake; display executive brief, prioritized list, drill-down evidence, recommendations, confidence flags.\n\n## 9. Constraints\n- Do NOT modify agents/reused/ (empty but frozen by policy).\n- No placeholder or hardcoded fake business data.\n- Follow generation_order for implementation sequencing.\n- Honor all acceptance_criteria in project_summary including compliance validation, evidence checks, insufficient-evidence handling, and photo-over-report conflict resolution.\n- Reuse nodes are frozen and generation_order must be followed."
+    "content": "Build a runnable Python FastAPI project implementing the Retail Store Performance and Shelf Audit Assistant workflow (session-1785925042706-xpjtx7). Follow generation_order exactly. All 12 nodes are BUILD nodes — agents/reused/ is empty and must remain untouched.\n\n## 1. Foundation first\nImplement config/settings.py loading env vars (AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT, optional AZURE_OPENAI_VISION_DEPLOYMENT, optional ROBOFLOW_API_KEY, UPLOAD_ROOT, optional AZURE_STORAGE_CONNECTION_STRING). Missing required live credentials raise config.settings.ConfigurationError — never mock silently. Implement scripts/check_placeholders.py scanning agents/generated/, integrations/, orchestrator/, and main.py for TODO/pass/NotImplementedError in business logic.\n\nImplement integrations/ each with health_check() surfacing real underlying API errors: local_storage, document_extractor, azure_openai (with max_completion_tokens vs max_tokens detect-and-retry on 400 unsupported_parameter via config/azure_openai_token_param.py and per-deployment process cache; honor AZURE_OPENAI_TOKEN_PARAM override), vision_quality, row_detector, policy_validator.\n\nAdd Request-ID pure-ASGI middleware in main.py (UUID or inbound X-Request-ID on scope state, logs, response header). Implement utils/json_safe.py json_safe stripping bytes from dict/list outputs.\n\n## 2. Shared contracts\nUse consistent dict/Pydantic shapes across agents: ValidatedUploadPackage, AnalysisRouterDecision (analysis_type, run_document_path, run_vision_path, reason), ReportFindings, UsableShelfImages, DetectedRow, DetectedProduct, VisualFindings, NormalizedIssue/NormalizedFindings, MergedEvidenceSet, ScoredIssue, PrioritizedIssue, ActionRecommendation, BriefDraft, WorkflowFinalOutput.\n\n## 3. Node implementations (generation_order)\n\n### 3.1 upload-intake (agents/generated/upload_intake/)\nImplement run(payload, settings, dry_run) accepting document_paths and image_paths. Validate PDF/DOCX + image types via policy_validator. Persist to data/uploads/{job_id}/ using local_storage. Return validated_upload_package with path refs only — never bytes.\n\n### 3.2 analysis-router (agents/generated/analysis_router/)\nImplement LLM-based classification into vision_then_unified | unified_only | vision_only with keyword/regex fallback on dry_run or LLM failure. Non-empty image_paths MUST force vision-inclusive route. Emit run_document_path and run_vision_path booleans.\n\n### 3.3 document-brief-extractor (agents/generated/document_brief_extractor/)\nExtract text via document_extractor. LLM summarizes prior_findings[] grounded in extracted text. Assess ocr_quality. Skip/no-op when run_document_path=false.\n\n### 3.4 shelf-image-quality-gate (agents/generated/shelf_image_quality_gate/)\nScore images with vision_quality integration. Mark insufficient_evidence for blur/dark/obstructed/partial. Continue with usable subset. Skip when run_vision_path=false.\n\n### 3.5 shelf-row-detection (agents/generated/shelf_row_detection/)\nRun row_detector on usable images. Output detected_rows with crop_path refs and products with bboxes. Write crops to storage.\n\n### 3.6 shelf-vision-analysis (agents/generated/shelf_vision_analysis/)\nBuild from scratch (planogram_vision_agent_chain package unavailable under agents/reused/). Use azure_openai vision over row crops in sorted row_index order. Emit visual_findings issues for visible stock-outs, facings/count problems, placement issues. visible_only=true on all issues. No planogram comparison.\n\n### 3.7 findings-normalization (agents/generated/findings_normalization/)\nMerge report and visual streams into NormalizedIssue schema with evidence_refs. Handle single-branch input.\n\n### 3.8 evidence-merge-gate (agents/generated/evidence_merge_gate/)\nMerge issues; current photos override report on present-state conflicts. Flag date/area mismatches and cross-photo inconsistencies.\n\n### 3.9 evidence-confidence-check (agents/generated/evidence_confidence_check/)\nScore confidence, groundedness, conflicts. Mark insufficient_evidence. Gate ready_for_synthesis.\n\n### 3.10 issue-prioritization (agents/generated/issue_prioritization/)\nDeterministic priority_score using severity, photo authority, recurrence, confidence. Emit prioritized_issues and actions (advisory only).\n\n### 3.11 executive-brief-generation (agents/generated/executive_brief_generation/)\nLLM generates one-page brief_draft and recommendations grounded in prioritized issues only.\n\n### 3.12 manager-drilldown-output (agents/generated/manager_drilldown_output/)\nAssemble all five final spec outputs. Use drilldown_adapter injecting workflow_context from orchestrator (prioritized_issues, scored_issues, merged_evidence_set, validated_upload_package, usable_shelf_images) for side-by-side photo/report evidence views. confidence_notes_and_insufficient_evidence_flags is a structured object.\n\n## 4. Orchestrator (orchestrator/graph.py)\nRegister all node entrypoints per workflow_manifest.json. Execute in generation_order but fan-out document-brief-extractor and shelf-image-quality-gate in parallel when analysis_type=vision_then_unified. Honor run_document_path/run_vision_path skip flags. Apply vision_input_adapter, normalization_adapter, and drilldown_adapter at the integration points listed in the plan. Apply json_safe on all returns from run_workflow_from_node.\n\n## 5. HTTP API (main.py)\nFastAPI app with GET /health calling all integration health_check() methods (200 ok, 503 with reason). POST multipart /audit/intake (or equivalent) using only File/Form/UploadFile params for report document(s) and shelf photo(s) — no Pydantic body alongside files. Persist uploads then run full workflow. Wrap sync node calls in await asyncio.to_thread(...).\n\n## 6. CLI\nmain.py --dry-run validates config shape and runs workflow with fixtures without live Azure calls. run_workflow.py exposes run_workflow() and run_workflow_from_node().\n\n## 7. Tests\npytest suite in tests/ covering health, intake validation, router has_image override, dry-run end-to-end, json_safe bytes stripping. Tests must pass without live external services.\n\n## 8. Optional frontend\nMinimal React upload form posting multipart to intake endpoint; display executive brief, prioritized list, drill-down evidence, recommendations, confidence flags.\n\n## 9. Constraints\n- Do NOT modify agents/reused/ (empty but frozen by policy).\n- No placeholder or hardcoded fake business data.\n- Follow generation_order for implementation sequencing.\n- Honor all acceptance_criteria in project_summary including compliance validation, evidence checks, insufficient-evidence handling, and photo-over-report conflict resolution.\n- Reuse nodes are frozen and generation_order must be followed."
   }
 }
