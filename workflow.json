@@ -1,0 +1,1631 @@
+{
+  "sessionId": "session-1785925042706-xpjtx7",
+  "title": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regional store managers. Users upload an existing store performance or audit PDF or DOCX along with one or more current retail shelf photos. The system produces a concise one-page narrative executive brief, analyzes shelf images for visible product availability, count, and placement issues, combines report context with current visual observations to identify recurring or important problems, prioritizes issues, and recommends corrective actions for the manager.",
+  "problemStatement": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regional store managers. Users upload an existing store performance or audit PDF or DOCX along with one or more current retail shelf photos. The system produces a concise one-page narrative executive brief, analyzes shelf images for visible product availability, count, and placement issues, combines report context with current visual observations to identify recurring or important problems, prioritizes issues, and recommends corrective actions for the manager.",
+  "exportedAt": "2026-08-05T11:07:24.093640+00:00",
+  "plan": {
+    "graph": {
+      "nodes": [
+        {
+          "id": "upload-intake",
+          "label": "Upload Intake",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Accept report documents and shelf photos, perform intake checks, and register the job.",
+          "required_capability": "intake",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "analysis-router",
+          "label": "Analysis Router",
+          "type": "gateway",
+          "agent_id": null,
+          "description": "Route the request into document, vision, or unified processing paths based on uploaded inputs.",
+          "required_capability": "routing",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "document-brief-extractor",
+          "label": "Document Brief Extractor",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Extract text from uploaded PDF/DOCX and produce a concise structured summary of prior audit findings.",
+          "required_capability": "document_understanding",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "shelf-image-quality-gate",
+          "label": "Shelf Image Quality Gate",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Check shelf photos for usable visual evidence and flag insufficient-quality images before downstream analysis.",
+          "required_capability": "image_validation",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "shelf-row-detection",
+          "label": "Shelf Row Detection",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Detect shelf products and row-level visual regions to prepare structured inputs for shelf analysis.",
+          "required_capability": "object_detection",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "shelf-vision-analysis",
+          "label": "Shelf Vision Analysis",
+          "type": "agent",
+          "agent_id": "planogram_vision_agent_chain",
+          "description": "Analyze shelf photos for visible availability, count, and placement issues using row-aware vision reasoning.",
+          "required_capability": "visual_qa",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "findings-normalization",
+          "label": "Findings Normalization",
+          "type": "custom",
+          "agent_id": null,
+          "description": "Normalize document and image findings into a shared issue schema with linked evidence references.",
+          "required_capability": null,
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "evidence-merge-gate",
+          "label": "Evidence Merge Gate",
+          "type": "gateway",
+          "agent_id": null,
+          "description": "Merge prior report context with current shelf observations and enforce current photos as source of truth on conflicts.",
+          "required_capability": null,
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "evidence-confidence-check",
+          "label": "Evidence Confidence Check",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Reconcile cross-source evidence, flag conflicts, and score groundedness and confidence for each issue.",
+          "required_capability": "evidence_reconciliation",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "issue-prioritization",
+          "label": "Issue Prioritization",
+          "type": "custom",
+          "agent_id": null,
+          "description": "Prioritize issues using current shelf conditions, recurrence signals, severity, and confidence.",
+          "required_capability": "risk_scoring",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "executive-brief-generation",
+          "label": "Executive Brief Generation",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Generate the one-page narrative executive brief and corrective action recommendations for the manager.",
+          "required_capability": "content_generation",
+          "inputs": [],
+          "outputs": []
+        },
+        {
+          "id": "manager-drilldown-output",
+          "label": "Manager Drill-down Output",
+          "type": "agent",
+          "agent_id": null,
+          "description": "Assemble the final brief, prioritized issues, confidence notes, and side-by-side evidence views for delivery.",
+          "required_capability": "answer_consolidation",
+          "inputs": [],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "from_id": "upload-intake",
+          "to_id": "analysis-router",
+          "label": "validated upload package",
+          "condition": null
+        },
+        {
+          "from_id": "analysis-router",
+          "to_id": "document-brief-extractor",
+          "label": "document path",
+          "condition": "analysis_type == 'vision_then_unified'"
+        },
+        {
+          "from_id": "analysis-router",
+          "to_id": "shelf-image-quality-gate",
+          "label": "vision path",
+          "condition": "analysis_type == 'vision_then_unified'"
+        },
+        {
+          "from_id": "analysis-router",
+          "to_id": "document-brief-extractor",
+          "label": "document-only path",
+          "condition": "analysis_type == 'unified_only'"
+        },
+        {
+          "from_id": "analysis-router",
+          "to_id": "shelf-image-quality-gate",
+          "label": "vision-only path",
+          "condition": "analysis_type == 'vision_only'"
+        },
+        {
+          "from_id": "shelf-image-quality-gate",
+          "to_id": "shelf-row-detection",
+          "label": "usable shelf images",
+          "condition": null
+        },
+        {
+          "from_id": "shelf-row-detection",
+          "to_id": "shelf-vision-analysis",
+          "label": "detected rows and products",
+          "condition": null
+        },
+        {
+          "from_id": "document-brief-extractor",
+          "to_id": "findings-normalization",
+          "label": "report findings",
+          "condition": null
+        },
+        {
+          "from_id": "shelf-vision-analysis",
+          "to_id": "findings-normalization",
+          "label": "visual findings",
+          "condition": null
+        },
+        {
+          "from_id": "findings-normalization",
+          "to_id": "evidence-merge-gate",
+          "label": "normalized findings",
+          "condition": null
+        },
+        {
+          "from_id": "evidence-merge-gate",
+          "to_id": "evidence-confidence-check",
+          "label": "merged evidence set",
+          "condition": null
+        },
+        {
+          "from_id": "evidence-confidence-check",
+          "to_id": "issue-prioritization",
+          "label": "scored issues",
+          "condition": null
+        },
+        {
+          "from_id": "issue-prioritization",
+          "to_id": "executive-brief-generation",
+          "label": "prioritized issues and actions",
+          "condition": null
+        },
+        {
+          "from_id": "executive-brief-generation",
+          "to_id": "manager-drilldown-output",
+          "label": "brief draft and recommendations",
+          "condition": null
+        }
+      ]
+    },
+    "reuse_decisions": [
+      {
+        "node_id": "upload-intake",
+        "node_label": "Upload Intake",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "intake"
+      },
+      {
+        "node_id": "analysis-router",
+        "node_label": "Analysis Router",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "routing"
+      },
+      {
+        "node_id": "document-brief-extractor",
+        "node_label": "Document Brief Extractor",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "document_understanding"
+      },
+      {
+        "node_id": "shelf-image-quality-gate",
+        "node_label": "Shelf Image Quality Gate",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "image_validation"
+      },
+      {
+        "node_id": "shelf-row-detection",
+        "node_label": "Shelf Row Detection",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "object_detection"
+      },
+      {
+        "node_id": "shelf-vision-analysis",
+        "node_label": "Shelf Vision Analysis",
+        "decision": "build",
+        "agent_id": "planogram_vision_agent_chain",
+        "agent_name": "Planogram Vision Agent Chain",
+        "rationale": "matched Planogram Vision Agent Chain",
+        "catalog_score": 0.99,
+        "required_capability": "visual_qa",
+        "reuse_downgraded_from": "planogram_vision_agent_chain",
+        "downgrade_reason": "No catalog package found for agent_id 'planogram_vision_agent_chain'; implementing this node from scratch as a build node."
+      },
+      {
+        "node_id": "findings-normalization",
+        "node_label": "Findings Normalization",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": null
+      },
+      {
+        "node_id": "evidence-merge-gate",
+        "node_label": "Evidence Merge Gate",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": null
+      },
+      {
+        "node_id": "evidence-confidence-check",
+        "node_label": "Evidence Confidence Check",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "evidence_reconciliation"
+      },
+      {
+        "node_id": "issue-prioritization",
+        "node_label": "Issue Prioritization",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "risk_scoring"
+      },
+      {
+        "node_id": "executive-brief-generation",
+        "node_label": "Executive Brief Generation",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "content_generation"
+      },
+      {
+        "node_id": "manager-drilldown-output",
+        "node_label": "Manager Drill-down Output",
+        "decision": "build",
+        "agent_id": null,
+        "agent_name": null,
+        "rationale": "no catalog match",
+        "catalog_score": null,
+        "required_capability": "answer_consolidation"
+      }
+    ],
+    "catalog_matches": [
+      {
+        "agent_id": "planogram_vision_agent_chain",
+        "name": "Planogram Vision Agent Chain",
+        "score": 0.99,
+        "capabilities": [
+          "visual_qa",
+          "counting"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "AutoGen multi-agent vision chain that routes shelf queries to counting or generic understanding over row-crop images, then consolidates into a final natural-language shelf answer with reasoning.",
+        "inputs": [
+          "user_query",
+          "image_paths (ordered shelf-row crops)",
+          "optional initial_question alias"
+        ],
+        "outputs": [
+          "user_query",
+          "final_answer",
+          "reasoning"
+        ],
+        "matched_for": "user_selected:visual_qa",
+        "status": "available"
+      },
+      {
+        "agent_id": "shelf_layout_compliance_vision_agent",
+        "name": "Shelf Layout Compliance Vision Agent",
+        "score": 0.95,
+        "capabilities": [],
+        "category": "Quality & Compliance",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Compares actual shelf photos against layout and agreement references; emits compliance rows and issues; deterministic scoring for placement, facings, pricing, layout match, and document clauses.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "competitive_shelf_intelligence_scorer",
+        "name": "Competitive Shelf Intelligence Scorer",
+        "score": 0.95,
+        "capabilities": [
+          "competitive_analysis"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Computes Mars visibility, competitor pressure, promo and shelf position scores from vision-extracted brand facings using weighted shelf-level rules.",
+        "inputs": [
+          "vision shelf rows with brand, facings, shelf_level"
+        ],
+        "outputs": [
+          "mars_visibility_score",
+          "competitor_pressure_score",
+          "overall_competitive_score",
+          "brand_occupancy",
+          "placement_issues"
+        ],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "shelf_understanding_agent",
+        "name": "Shelf Understanding Agent",
+        "score": 0.8075,
+        "capabilities": [
+          "visual_qa"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Answers descriptive, price, promotion, and stock-out questions from cropped row images and full shelf context.",
+        "inputs": [
+          "User query",
+          "Cropped row images",
+          "Optional original shelf image for price/promo queries"
+        ],
+        "outputs": [
+          "answer and reasoning per row"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "planogram_vision_llm_suite",
+        "name": "Planogram Vision LLM Suite",
+        "score": 0.6863749999999998,
+        "capabilities": [],
+        "category": "Quality & Compliance",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Azure OpenAI vision functions for shelf-level product extraction, row counting, generic row description, daily KPI JSON, and final natural-language shelf answers after Roboflow cropping.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Upload intake for report documents and shelf photos, Document text extraction an",
+        "status": "available"
+      },
+      {
+        "agent_id": "roboflow-shelf-row-detector",
+        "name": "Roboflow Shelf Row Detector",
+        "score": 0.42152004687499994,
+        "capabilities": [],
+        "category": "Supply Chain & Logistics",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Segments shelf rows and detects product bounding boxes; writes cropped and annotated artifacts to Azure Blob for downstream vision LLMs.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "shelf-count-agent",
+        "name": "Shelf Count Agent",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Per-row brand-aware product counting from YOLO-annotated shelf images with confidence and structured visual reasoning.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "semantic_image_search_validator",
+        "name": "Semantic Image Search & Validator",
+        "score": 0.35,
+        "capabilities": [
+          "vector_search",
+          "image_validation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Embeds text queries with Azure AI Vision, retrieves similar shelf images from Azure AI Search, and filters results with GPT vision relevance scoring.",
+        "inputs": [
+          "Natural-language search query",
+          "Azure Blob image corpus"
+        ],
+        "outputs": [
+          "validated_results with blob_name, sas_url, gpt_reason, @search.score"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "roboflow-shelf-row-detector-v4",
+        "name": "Roboflow Shelf Row Detector",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Detects shelf rows as polygons, produces masked row crops and a polygon-overlay summary image.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "planogram_image_semantic_search",
+        "name": "Planogram Image Semantic Search",
+        "score": 0.35,
+        "capabilities": [
+          "vector_search",
+          "image_validation"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Embeds shelf images with Azure AI Vision, vector-searches Azure AI Search by supermarket, and validates matches with GPT before returning blob hits.",
+        "inputs": [
+          "natural language query",
+          "supermarket prefix"
+        ],
+        "outputs": [
+          "ranked blob images",
+          "validation reasons",
+          "SAS URLs"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "generation-prompt-author-v2-1-0",
+        "name": "Generation Prompt Author",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Azure vision+text agent that writes per-PDP-image-type multimodal prompts (or per-role directives) from reference photos and PDF excerpts before image generation.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "kyc_risk_report_generator",
+        "name": "KYC Risk Report Generator",
+        "score": 0.35,
+        "capabilities": [
+          "report_generation"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Generates downloadable Word (.docx) KYC risk assessment reports with KPI summary table, section scores, UBO details, override status, and AI reasoning narratives.",
+        "inputs": [
+          "risk_assessment_summary.json payload",
+          "entities, ubos, relationships from Azure SQL"
+        ],
+        "outputs": [
+          "KYC_Risk_Report_{project}.docx binary"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "roboflow_product_detector",
+        "name": "Roboflow Product Detector",
+        "score": 0.35,
+        "capabilities": [
+          "object_detection"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Runs YOLO product detection on each shelf row crop and writes annotated images with per-class counts.",
+        "inputs": [
+          "Cropped row images"
+        ],
+        "outputs": [
+          "Annotated row_N.png",
+          "row_counts per class in metadata.json"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "roboflow-product-detector-v3",
+        "name": "Roboflow Product Detector",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Runs YOLO product detection on each shelf row crop and writes annotated images with per-class counts.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "eryl_semantic_rag_agent_chain",
+        "name": "Eryl Semantic RAG Agent Chain",
+        "score": 0.35,
+        "capabilities": [
+          "retrieval",
+          "document_qa"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Retrieves and answers from indexed retail policy and unstructured documents (Chocolate_Confectionery_Retail_Policy.docx, emails, guidelines) using Azure AI Search vector + semantic retrieval.",
+        "inputs": [
+          "semantic_question",
+          "Vector_Data routing hints"
+        ],
+        "outputs": [
+          "retrieval-grounded answer",
+          "Semantic-based analysis_type"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "amazon-pdp-video-prompt-author-v2-1-0",
+        "name": "Amazon PDP Video Prompt Author",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Produces a full Amazon PDP video ad script (reference block, compliance checklist, scenes, generation prompts) from product spec, guardrails, optional user script, and reference image.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "gpt_4o_fashion_vision_analyzer",
+        "name": "GPT-4o Fashion Vision Analyzer",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Analytics VTO Platform",
+        "function_summary": "Analyzes person and garment reference images with a fashion/computational-photography system prompt and outputs a single precise image-editing instruction for virtual try-on, including layering, lighting, and full-frame preservation.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "live"
+      },
+      {
+        "agent_id": "generation_prompt_author",
+        "name": "Generation Prompt Author",
+        "score": 0.35,
+        "capabilities": [
+          "prompt_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Azure vision+text agent that writes per-PDP-image-type multimodal prompts (or per-role directives) from reference photos and PDF excerpts before image generation.",
+        "inputs": [
+          "Reference product images (up to 4)",
+          "image_types[]",
+          "User prompt text",
+          "Product spec PDF excerpt",
+          "Guardrails PDF excerpt"
+        ],
+        "outputs": [
+          "JSON prompts per image type",
+          "Optional role_directives map for template fallback"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "amazon_pdp_video_prompt_author",
+        "name": "Amazon PDP Video Prompt Author",
+        "score": 0.35,
+        "capabilities": [
+          "video_script_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Produces a full Amazon PDP video ad script (reference block, compliance checklist, scenes, generation prompts) from product spec, guardrails, optional user script, and reference image.",
+        "inputs": [
+          "Product spec PDF text",
+          "Guardrails PDF text",
+          "Reference image",
+          "User script_or_prompt",
+          "width x height x seconds"
+        ],
+        "outputs": [
+          "Long video generation prompt string (Sora-clamped)"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "risk_reasoning_generator",
+        "name": "Risk Reasoning Generator",
+        "score": 0.35,
+        "capabilities": [
+          "explanation_generation"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Generates explainable AI narratives for the final risk score and each of four risk dimensions (Geography, Ownership, Industry, Sanctions) for UI display and DOCX reports.",
+        "inputs": [
+          "project_id",
+          "section_scores_0_100",
+          "final_score",
+          "final_tier",
+          "engineered feature summary"
+        ],
+        "outputs": [
+          "final_reasoning (UI paragraph)",
+          "report_reasoning (geography, ownership_structure, industry_type, sanctions, final_summary)"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "pipeline_intent_classifier",
+        "name": "Pipeline Intent Classifier",
+        "score": 0.35,
+        "capabilities": [
+          "routing"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Classifies each user question into vision_only, vision_then_unified, or unified_only and flags multi-shelf comparisons for SQL-only routing.",
+        "inputs": [
+          "question",
+          "has_image"
+        ],
+        "outputs": [
+          "mode",
+          "run_vision_pipeline",
+          "reason",
+          "shelf_comparison_sql_route"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "quin_sql_agent_chain",
+        "name": "Quin SQL Agent Chain",
+        "score": 0.35,
+        "capabilities": [
+          "sql_generation",
+          "sql_execution"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "AutoGen multi-agent chain that generates, executes, and critiques SQL Server queries on mars schema tables (Mars_Sales_Data, shelf_visit, retail_planogram_stocks, etc.) and returns structured sales/inventory insights.",
+        "inputs": [
+          "sql_question",
+          "SQL_Meta_Data schema",
+          "optional vision_context block"
+        ],
+        "outputs": [
+          "sql_query results",
+          "SQL-based narrative answer",
+          "analysis_type SQL-based"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "executive_action_card_writer",
+        "name": "Executive Action Card Writer",
+        "score": 0.35,
+        "capabilities": [
+          "content_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Generates short action-oriented title and subtitle text for field executive promo, compliance, and recommended action cards.",
+        "inputs": [
+          "action dict with store and KPI flags"
+        ],
+        "outputs": [
+          "title",
+          "subtitle"
+        ],
+        "matched_for": "Build an AI-powered Retail Store Performance and Shelf Audit Assistant for regio",
+        "status": "available"
+      },
+      {
+        "agent_id": "final_answer_consolidation_agent",
+        "name": "Final Answer Consolidation Agent",
+        "score": 0.35,
+        "capabilities": [
+          "answer_consolidation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Consolidates count and generic row-level analyses into a single natural-language answer based on task_type routing.",
+        "inputs": [
+          "User query",
+          "intermediate JSON with count_analysis and generic_analysis"
+        ],
+        "outputs": [
+          "final_answer",
+          "reasoning",
+          "user_query"
+        ],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "email_message_drafter",
+        "name": "Email & Message Drafter",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Horizontal Agents",
+        "function_summary": "Drafts professional outbound emails or chat messages from a brief, context, and tone, ready for human review before sending.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "answer_summarizer",
+        "name": "Answer Summarizer",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Horizontal Agents",
+        "function_summary": "Condenses retrieved context, long documents, or transcripts into a concise grounded answer or summary, citing the supporting sources.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "rag_document_retriever",
+        "name": "RAG Document Retriever",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Horizontal Agents",
+        "function_summary": "Retrieves the most relevant passages from an indexed document corpus for a user query, returning ranked chunks with source citations for grounded answering.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "mars_sales_order_simulator",
+        "name": "Mars Sales Order Simulator",
+        "score": 0.35,
+        "capabilities": [
+          "demand_forecasting"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "CatBoost/sklearn regression predicts demand and realized sales under promotion, price, and stock constraints for Snickers/Mars/Twix SKUs.",
+        "inputs": [
+          "promotion_discount",
+          "price",
+          "sku_id",
+          "store_id",
+          "horizon_weeks",
+          "stock_units"
+        ],
+        "outputs": [
+          "projected units",
+          "revenue uplift",
+          "margin",
+          "order recommendation",
+          "risk flags"
+        ],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "policy_schema_validator",
+        "name": "Policy & Schema Validator",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Horizontal Agents",
+        "function_summary": "Validates extracted or submitted data against a configurable policy or schema, blocking incomplete or non-compliant payloads and listing the specific gaps.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Help regional store managers quickly understand current shelf problems in the co",
+        "status": "available"
+      },
+      {
+        "agent_id": "document_ingestion_agent",
+        "name": "Document Ingestion Agent",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening (UBO GraphRAG)",
+        "function_summary": "Corporate KYC document ingestion entry point: accepts uploaded PDF, DOCX, TXT, or XLSX via file path or blob storage, detects file type, extracts and normalizes text (with OCR for scanned PDFs), chunks content, and emits document_id and text_content for downstream entity extraction and policy valida",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Upload intake for report documents and shelf photos, Document text extraction an",
+        "status": "available"
+      },
+      {
+        "agent_id": "entity-extraction-agent",
+        "name": "Entity Extraction Agent",
+        "score": 0.35,
+        "capabilities": [],
+        "category": "Document & Data",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening (UBO GraphRAG)",
+        "function_summary": "Extracts entities, ownership relationships, and UBO registry records from uploaded corporate KYC documents into structured JSON for SQL persistence.",
+        "inputs": [],
+        "outputs": [],
+        "matched_for": "Upload intake for report documents and shelf photos, Document text extraction an",
+        "status": "available"
+      },
+      {
+        "agent_id": "azure_ai_search_catalog_vector_retrieval",
+        "name": "Azure AI Search Catalog Vector Retrieval",
+        "score": 0.35,
+        "capabilities": [
+          "vector_search"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Analytics VTO Platform",
+        "function_summary": "Maintains and queries the vto-accessories HNSW vector index for cosine-similarity ranking of catalog items from text or image-derived embeddings.",
+        "inputs": [
+          "query embedding vector",
+          "top (1-48)"
+        ],
+        "outputs": [
+          "ranked catalog documents (id, blob_name, name, category, tags)",
+          "search score"
+        ],
+        "matched_for": "Upload intake for report documents and shelf photos, Document text extraction an",
+        "status": "available"
+      },
+      {
+        "agent_id": "gpt_image_relevance_validator",
+        "name": "GPT Image Relevance Validator",
+        "score": 0.35,
+        "capabilities": [
+          "image_validation"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Strict vision-based filter that approves or rejects blob images against a user's semantic search query.",
+        "inputs": [
+          "Image bytes",
+          "Search query string"
+        ],
+        "outputs": [
+          "relevant boolean",
+          "reason sentence",
+          "gpt_validated flag"
+        ],
+        "matched_for": "Upload intake for report documents and shelf photos, Document text extraction an",
+        "status": "available"
+      },
+      {
+        "agent_id": "azure_ai_vision_catalog_embedder",
+        "name": "Azure AI Vision Catalog Embedder",
+        "score": 0.35,
+        "capabilities": [
+          "embedding_generation"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Analytics VTO Platform",
+        "function_summary": "Generates 1024-dimensional multimodal embeddings for catalog accessory images and natural-language search queries to power semantic garment discovery.",
+        "inputs": [
+          "image_bytes (catalog upload or index job)",
+          "text query string (semantic search)"
+        ],
+        "outputs": [
+          "embedding vector (list[float], 1024 dims)"
+        ],
+        "matched_for": "Upload intake for report documents and shelf photos \u2192 Document text extraction a",
+        "status": "available"
+      },
+      {
+        "agent_id": "executive_brief_generator_agent_chain",
+        "name": "Executive Brief Generator",
+        "score": 0.17820244962334963,
+        "capabilities": [
+          "summarization",
+          "document_understanding",
+          "pdf_extraction"
+        ],
+        "category": "Document & Data",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Turns an uploaded PDF into a one-page structured executive brief: PyMuPDF text extraction (no LLM) plus a Brief_Writer agent that returns title, key_points, executive_summary, and word_count grounded only in the source text.",
+        "inputs": [
+          "pdf_path",
+          "optional pdf_text",
+          "optional focus"
+        ],
+        "outputs": [
+          "title",
+          "key_points",
+          "executive_summary",
+          "word_count",
+          "page_count",
+          "source_pdf",
+          "within_length_bounds"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "gpt4o_fashion_vision_analyzer",
+        "name": "GPT-4o Fashion Vision Analyzer",
+        "score": 0.09463204468147676,
+        "capabilities": [
+          "prompt_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Analytics VTO Platform",
+        "function_summary": "Analyzes person and garment reference images with a fashion/computational-photography system prompt and outputs a single precise image-editing instruction for virtual try-on, including layering, lighting, and full-frame preservation.",
+        "inputs": [
+          "person_image (JPEG bytes)",
+          "garment_images (1-8 JPEG bytes)",
+          "demographic (optional form field)",
+          "category (optional form field)",
+          "style_tags (optional comma-separated form field)"
+        ],
+        "outputs": [
+          "generated_prompt (string)",
+          "duration_ms",
+          "tokens_used"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "live"
+      },
+      {
+        "agent_id": "intake_gateway",
+        "name": "Intake Gateway",
+        "score": 0.08553571990445118,
+        "capabilities": [
+          "intake",
+          "content_safety",
+          "governance"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Receives the user question, runs a deterministic Azure Content Safety-style pre-check (toxicity, PII, prompt injection), then an LLM Responsible AI agent for governance and business-rule blocking before routing or retrieval.",
+        "inputs": [
+          "question"
+        ],
+        "outputs": [
+          "initial_question",
+          "rai_check_passed",
+          "risk_score",
+          "severity",
+          "next_agent",
+          "azure_content_safety",
+          "blocked_reason"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "graphrag_index_query_agent",
+        "name": "GraphRAG Index & Query Agent",
+        "score": 0.08236662258223168,
+        "capabilities": [
+          "retrieval",
+          "indexing"
+        ],
+        "category": "Document & Data",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Indexes per-project KYC documents into a knowledge graph with entity/community extraction and embeddings; answers analyst questions via local, global, drift, or basic search methods.",
+        "inputs": [
+          "project_id",
+          "TXT documents in projects/{id}/input/",
+          "natural language question",
+          "search method (local/global/drift/basic)"
+        ],
+        "outputs": [
+          "entities.parquet",
+          "community_reports.parquet",
+          "LanceDB embeddings",
+          "natural language answer text"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "roboflow_shelf_row_detector_mars",
+        "name": "Roboflow Shelf Row Detector",
+        "score": 0.07540461810874112,
+        "capabilities": [
+          "object_detection"
+        ],
+        "category": "Supply Chain & Logistics",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Segments shelf rows and detects product bounding boxes; writes cropped and annotated artifacts to Azure Blob for downstream vision LLMs.",
+        "inputs": [
+          "shelf image bytes"
+        ],
+        "outputs": [
+          "row crops",
+          "products_detected annotations",
+          "metadata.json"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "evidence_checker",
+        "name": "Evidence Checker",
+        "score": 0.06981111106074583,
+        "capabilities": [
+          "evidence_reconciliation",
+          "conflict_detection",
+          "quality_evaluation"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Reconciles structured (SQL) and semantic (document) evidence, flags material conflicts, scores groundedness/completeness/faithfulness, and gates whether grounded answer synthesis may proceed.",
+        "inputs": [
+          "initial_question",
+          "analysis_type",
+          "query_answer",
+          "llm_answer",
+          "optional query",
+          "optional inference"
+        ],
+        "outputs": [
+          "conflict_detected",
+          "conflicts",
+          "evidence_strength",
+          "groundedness",
+          "completeness",
+          "faithfulness",
+          "ready_for_synthesis",
+          "next_agent",
+          "feedback"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "risk_scoring_agent",
+        "name": "Risk Scoring Agent",
+        "score": 0.06776741475716971,
+        "capabilities": [
+          "risk_scoring"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Aggregates geography (30), ownership (30), regulatory/sanctions (20), and industry (20) scores into a final 0\u2013100 risk score with hard override rules for FATF blacklist, sanctions, circular ownership, and PEP exposure.",
+        "inputs": [
+          "RiskFactorScores (geography_score, ownership_score, regulatory_score, industry_score)",
+          "OverrideFlags",
+          "client_summary / project_id"
+        ],
+        "outputs": [
+          "final_score (0\u2013100)",
+          "risk_tier (Low/Medium/High)",
+          "override_triggered",
+          "override_reason",
+          "reasoning text"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "gemini_image_compositor",
+        "name": "Gemini Image Compositor",
+        "score": 0.06712505509632027,
+        "capabilities": [
+          "image_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Affine Analytics VTO Platform",
+        "function_summary": "Synthesizes the final virtual try-on image from person photo, accessory references, and the GPT-generated editing prompt using Gemini image output modality with aspect ratio matching and up to three retries.",
+        "inputs": [
+          "person_image (JPEG bytes)",
+          "garment_images (JPEG bytes list)",
+          "editing_prompt (string from GPT analyzer)"
+        ],
+        "outputs": [
+          "output_image_bytes",
+          "mime_type",
+          "duration_ms"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "live"
+      },
+      {
+        "agent_id": "roboflow_shelf_row_detector_merchandising",
+        "name": "Roboflow Shelf Row Detector",
+        "score": 0.06380091150886702,
+        "capabilities": [
+          "object_detection"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Affine Analytics",
+        "origin_project": "Merchandising Vision Agent",
+        "function_summary": "Detects shelf rows as polygons, produces masked row crops and a polygon-overlay summary image.",
+        "inputs": [
+          "Full shelf/planogram image"
+        ],
+        "outputs": [
+          "row_N.png crops",
+          "shelf_summary.jpg"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "final_answer_rewriter",
+        "name": "Final Answer Rewriter",
+        "score": 0.06285566056425841,
+        "capabilities": [
+          "answer_consolidation"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Post-processes combined vision+SQL+semantic draft answers into concise structured user-facing text without adding new facts.",
+        "inputs": [
+          "original question",
+          "draft answer"
+        ],
+        "outputs": [
+          "final_answer_text"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "pdp_compliance_checker",
+        "name": "PDP Compliance Checker",
+        "score": 0.05346073488700489,
+        "capabilities": [
+          "compliance_scoring"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Vision LLM scores a generated PDP image against guardrails-only excerpts and returns pass/fail rules, warnings, suggestions, and compliance_score 0-100.",
+        "inputs": [
+          "Generated image file",
+          "image_type",
+          "Guardrails PDF text (type-focused excerpt)",
+          "Optional supplementary policy notes"
+        ],
+        "outputs": [
+          "compliance_score",
+          "passed_rules",
+          "failed_rules",
+          "warnings",
+          "suggestions"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "pdp_image_generator_azure_gpt_image",
+        "name": "PDP Image Generator (Azure GPT Image)",
+        "score": 0.040723148118768406,
+        "capabilities": [
+          "image_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Azure images/edits endpoint generates PDP variants from first reference image and per-slot prompt.",
+        "inputs": [
+          "Reference image PNG",
+          "Per-variant prompt",
+          "provider_id gpt-image"
+        ],
+        "outputs": [
+          "PNG per variant via Azure base64 response"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "main_entity_inference_agent",
+        "name": "Main Entity Inference Agent",
+        "score": 0.04016906586366955,
+        "capabilities": [
+          "entity_resolution"
+        ],
+        "category": "Document & Data",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Infers the primary corporate entity described in a project's latest document to center the radial ownership visualization.",
+        "inputs": [
+          "document bytes",
+          "filename",
+          "candidate entity names from SQL"
+        ],
+        "outputs": [
+          "entity_id",
+          "entity_name",
+          "reason"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "pdp_image_generator_gemini",
+        "name": "PDP Image Generator (Gemini)",
+        "score": 0.03770230905437056,
+        "capabilities": [
+          "image_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Generates Amazon-style PDP PNGs from reference images plus authored prompts, one variant per parallel task.",
+        "inputs": [
+          "Reference images",
+          "Per-variant prompt string",
+          "provider_id gemini-flash"
+        ],
+        "outputs": [
+          "PNG image bytes per variant",
+          "base64 images in API response"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "intent_router",
+        "name": "Intent Router",
+        "score": 0.036025803716501,
+        "capabilities": [
+          "routing"
+        ],
+        "category": "Document & Data",
+        "origin_client": "Mars",
+        "origin_project": "Mars Sales Genie (Copilot) / Unified View",
+        "function_summary": "Classifies a user question into configurable analysis_type categories (SQL-based, Semantic-based, Both-dependent, Both-independent) for graph-level conditional dispatch. Emits analysis_type; does not execute Quin/Eryl handoffs.",
+        "inputs": [
+          "question",
+          "initial_question",
+          "optional analysis_types override"
+        ],
+        "outputs": [
+          "analysis_type",
+          "reason"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "ubo_analysis_engine",
+        "name": "UBO Analysis Engine",
+        "score": 0.03564048992466993,
+        "capabilities": [
+          "ownership_analysis"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Computes UBO-specific risk score from ownership concentration, identification transparency, structural complexity, and PEP/sanctions/geo flags.",
+        "inputs": [
+          "entities from Azure SQL",
+          "ubo_registry rows",
+          "ownership_relationships"
+        ],
+        "outputs": [
+          "ubo_analysis.score_0_100",
+          "ubo_analysis.tier",
+          "ubo_analysis.summary",
+          "ubo_analysis.metrics (total_ubos, max_ownership_pct, circular_ownership, pep_count)",
+          "ubo_analysis.top_ubos"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "sora_image_to_video_generator",
+        "name": "Sora Image-to-Video Generator",
+        "score": 0.018630665602665245,
+        "capabilities": [
+          "video_generation"
+        ],
+        "category": "Sales & Revenue",
+        "origin_client": "Staples",
+        "origin_project": "Aira (CreAItive Studio)",
+        "function_summary": "Submits image-to-video jobs to Azure Sora, polls until complete, returns MP4 for PDP video ads.",
+        "inputs": [
+          "Approved prompt (max 15000 UTF-8 bytes)",
+          "Reference image",
+          "1280x720 or 720x1280",
+          "4, 8, or 12 seconds"
+        ],
+        "outputs": [
+          "video/mp4 base64",
+          "prompt_used",
+          "meta"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      },
+      {
+        "agent_id": "ml_risk_classifier_stub",
+        "name": "ML Risk Classifier Stub",
+        "score": 0.018417736717093933,
+        "capabilities": [
+          "classification"
+        ],
+        "category": "Quality & Compliance",
+        "origin_client": "JPMorgan Chase (JPMC)",
+        "origin_project": "JPMC KYC Risk Pre-Screening",
+        "function_summary": "Rule-based classifier that assigns Low/Medium/High risk tier from engineered geographic, industry, ownership, PEP, and sanctions features.",
+        "inputs": [
+          "primary_country",
+          "fatf_country_risk_band",
+          "industry_risk_band",
+          "ownership_layers",
+          "ownership_opacity",
+          "ubo_max_ownership_pct",
+          "pep_exposure",
+          "sanctions_hits",
+          "high_risk_geo_pct",
+          "circular_ownership"
+        ],
+        "outputs": [
+          "risk_tier (Low/Medium/High)",
+          "confidence (0.74\u20130.9)"
+        ],
+        "matched_for": "full_catalog:Build an AI-powered Retail Store Performance and Shelf Audit",
+        "status": "available"
+      }
+    ],
+    "summary_markdown": "This architecture implements a retail shelf audit assistant with a parallel document-and-vision flow that starts at upload intake and ends in a manager-ready executive brief plus drill-down evidence view. The design follows the provided orchestration pattern: document extraction/summarization and shelf-photo analysis run in parallel after routing, then converge into normalization, evidence merge, confidence checking, prioritization, and final delivery. Integrations assumed from the spec are document upload/storage, image upload/storage, OCR/document extraction, a vision model for shelf analysis, and LLM-based synthesis.\n\nThe plan is catalog-first and reuses/adapts 9 of 12 nodes, comfortably above the 60% target. Reused catalog agents cover intake, routing, document understanding, image validation, object detection, shelf visual QA, evidence reconciliation, content generation, and final answer consolidation. Custom build is reserved only for the retail-specific cross-modal normalization layer, the merge policy that enforces current shelf photos as source of truth, and the issue-prioritization logic that must reflect business severity and confidence.\n\nA key design choice is the true parallel fan-out from the routing gateway into the document path and the vision path for unified analysis. The vision path includes an explicit image-quality gate to avoid false certainty when photos are poor, then row/product detection and shelf reasoning. Both streams join before evidence reconciliation so the system can compare prior report findings against current visual observations and downgrade stale report claims when they conflict with present shelf evidence.\n\nMain risks are capability gaps in the catalog for retail-specific normalization and prioritization, plus the need to adapt some agents beyond their original domain framing. The highest-value mitigation is to define a strict normalized issue schema with evidence pointers, confidence fields, and conflict-resolution rules so downstream brief generation remains grounded and trustworthy for direct manager consumption.",
+    "open_questions": [
+      "Should DOCX extraction be handled by extending the Executive Brief Generator directly or by adding a separate preprocessing wrapper outside the graph?",
+      "Is shelf placement compliance expected against a formal planogram reference, or only against visible heuristics from the current photos and prior report text?",
+      "Should insufficient-evidence outputs terminate early for some images while still allowing partial analysis on the remaining usable shelf photos?"
+    ],
+    "node_explanations": {
+      "upload-intake": {
+        "purpose": "Upload Intake",
+        "role_in_workflow": "Upload Intake is a agent step. Receives from Workflow entry. Passes to Analysis Router.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Workflow entry"
+        ],
+        "feeds_into": [
+          "Analysis Router"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Accept report documents and shelf photos, perform intake checks, and register the job."
+      },
+      "analysis-router": {
+        "purpose": "Analysis Router",
+        "role_in_workflow": "Analysis Router is a gateway step. Receives from Upload Intake. Passes to Document Brief Extractor, Shelf Image Quality Gate, Document Brief Extractor, Shelf Image Quality Gate.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Upload Intake"
+        ],
+        "feeds_into": [
+          "Document Brief Extractor",
+          "Shelf Image Quality Gate",
+          "Document Brief Extractor",
+          "Shelf Image Quality Gate"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Route the request into document, vision, or unified processing paths based on uploaded inputs."
+      },
+      "document-brief-extractor": {
+        "purpose": "Document Brief Extractor",
+        "role_in_workflow": "Document Brief Extractor is a agent step. Receives from Analysis Router, Analysis Router. Passes to Findings Normalization.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Analysis Router",
+          "Analysis Router"
+        ],
+        "feeds_into": [
+          "Findings Normalization"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Extract text from uploaded PDF/DOCX and produce a concise structured summary of prior audit findings."
+      },
+      "shelf-image-quality-gate": {
+        "purpose": "Shelf Image Quality Gate",
+        "role_in_workflow": "Shelf Image Quality Gate is a agent step. Receives from Analysis Router, Analysis Router. Passes to Shelf Row Detection.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Analysis Router",
+          "Analysis Router"
+        ],
+        "feeds_into": [
+          "Shelf Row Detection"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Check shelf photos for usable visual evidence and flag insufficient-quality images before downstream analysis."
+      },
+      "shelf-row-detection": {
+        "purpose": "Shelf Row Detection",
+        "role_in_workflow": "Shelf Row Detection is a agent step. Receives from Shelf Image Quality Gate. Passes to Shelf Vision Analysis.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Shelf Image Quality Gate"
+        ],
+        "feeds_into": [
+          "Shelf Vision Analysis"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Detect shelf products and row-level visual regions to prepare structured inputs for shelf analysis."
+      },
+      "shelf-vision-analysis": {
+        "purpose": "Shelf Vision Analysis",
+        "role_in_workflow": "Shelf Vision Analysis is a agent step. Receives from Shelf Row Detection. Passes to Findings Normalization.",
+        "why_it_exists": "matched Planogram Vision Agent Chain",
+        "consumes_from": [
+          "Shelf Row Detection"
+        ],
+        "feeds_into": [
+          "Findings Normalization"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Analyze shelf photos for visible availability, count, and placement issues using row-aware vision reasoning."
+      },
+      "findings-normalization": {
+        "purpose": "Findings Normalization",
+        "role_in_workflow": "Findings Normalization is a custom step. Receives from Document Brief Extractor, Shelf Vision Analysis. Passes to Evidence Merge Gate.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Document Brief Extractor",
+          "Shelf Vision Analysis"
+        ],
+        "feeds_into": [
+          "Evidence Merge Gate"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Normalize document and image findings into a shared issue schema with linked evidence references."
+      },
+      "evidence-merge-gate": {
+        "purpose": "Evidence Merge Gate",
+        "role_in_workflow": "Evidence Merge Gate is a gateway step. Receives from Findings Normalization. Passes to Evidence Confidence Check.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Findings Normalization"
+        ],
+        "feeds_into": [
+          "Evidence Confidence Check"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Merge prior report context with current shelf observations and enforce current photos as source of truth on conflicts."
+      },
+      "evidence-confidence-check": {
+        "purpose": "Evidence Confidence Check",
+        "role_in_workflow": "Evidence Confidence Check is a agent step. Receives from Evidence Merge Gate. Passes to Issue Prioritization.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Evidence Merge Gate"
+        ],
+        "feeds_into": [
+          "Issue Prioritization"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Reconcile cross-source evidence, flag conflicts, and score groundedness and confidence for each issue."
+      },
+      "issue-prioritization": {
+        "purpose": "Issue Prioritization",
+        "role_in_workflow": "Issue Prioritization is a custom step. Receives from Evidence Confidence Check. Passes to Executive Brief Generation.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Evidence Confidence Check"
+        ],
+        "feeds_into": [
+          "Executive Brief Generation"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Prioritize issues using current shelf conditions, recurrence signals, severity, and confidence."
+      },
+      "executive-brief-generation": {
+        "purpose": "Executive Brief Generation",
+        "role_in_workflow": "Executive Brief Generation is a agent step. Receives from Issue Prioritization. Passes to Manager Drill-down Output.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Issue Prioritization"
+        ],
+        "feeds_into": [
+          "Manager Drill-down Output"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Generate the one-page narrative executive brief and corrective action recommendations for the manager."
+      },
+      "manager-drilldown-output": {
+        "purpose": "Manager Drill-down Output",
+        "role_in_workflow": "Manager Drill-down Output is a agent step. Receives from Executive Brief Generation. Passes to Workflow outcome.",
+        "why_it_exists": "no catalog match",
+        "consumes_from": [
+          "Executive Brief Generation"
+        ],
+        "feeds_into": [
+          "Workflow outcome"
+        ],
+        "chat_relationship": "Supports the user-defined workflow requirements.",
+        "execution_summary": "Assemble the final brief, prioritized issues, confidence notes, and side-by-side evidence views for delivery."
+      }
+    },
+    "architecture_approved": false,
+    "tech_stack": "Python / FastAPI / React"
+  },
+  "nodePositions": {}
+}
