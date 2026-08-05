@@ -1,0 +1,27 @@
+{
+  "id": "shelf-image-quality-gate",
+  "label": "Shelf Image Quality Gate",
+  "type": "agent",
+  "agentId": null,
+  "description": "Check shelf photos for usable visual evidence and flag insufficient-quality images before downstream analysis.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Shelf Image Quality Gate",
+    "role_in_workflow": "Shelf Image Quality Gate is a agent step. Receives from Analysis Router, Analysis Router. Passes to Shelf Row Detection.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Analysis Router",
+      "Analysis Router"
+    ],
+    "feeds_into": [
+      "Shelf Row Detection"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Check shelf photos for usable visual evidence and flag insufficient-quality images before downstream analysis."
+  },
+  "status": "scaffold"
+}
