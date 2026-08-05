@@ -1,0 +1,26 @@
+{
+  "id": "evidence-merge-gate",
+  "label": "Evidence Merge Gate",
+  "type": "gateway",
+  "agentId": null,
+  "description": "Merge prior report context with current shelf observations and enforce current photos as source of truth on conflicts.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Evidence Merge Gate",
+    "role_in_workflow": "Evidence Merge Gate is a gateway step. Receives from Findings Normalization. Passes to Evidence Confidence Check.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Findings Normalization"
+    ],
+    "feeds_into": [
+      "Evidence Confidence Check"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Merge prior report context with current shelf observations and enforce current photos as source of truth on conflicts."
+  },
+  "status": "scaffold"
+}
