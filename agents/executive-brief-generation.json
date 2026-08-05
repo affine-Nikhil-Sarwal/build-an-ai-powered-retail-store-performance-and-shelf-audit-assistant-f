@@ -1,0 +1,26 @@
+{
+  "id": "executive-brief-generation",
+  "label": "Executive Brief Generation",
+  "type": "agent",
+  "agentId": null,
+  "description": "Generate the one-page narrative executive brief and corrective action recommendations for the manager.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Executive Brief Generation",
+    "role_in_workflow": "Executive Brief Generation is a agent step. Receives from Issue Prioritization. Passes to Manager Drill-down Output.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Issue Prioritization"
+    ],
+    "feeds_into": [
+      "Manager Drill-down Output"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Generate the one-page narrative executive brief and corrective action recommendations for the manager."
+  },
+  "status": "scaffold"
+}
