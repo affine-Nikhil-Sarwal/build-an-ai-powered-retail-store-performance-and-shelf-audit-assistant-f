@@ -1,0 +1,26 @@
+{
+  "id": "manager-drilldown-output",
+  "label": "Manager Drill-down Output",
+  "type": "agent",
+  "agentId": null,
+  "description": "Assemble the final brief, prioritized issues, confidence notes, and side-by-side evidence views for delivery.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Manager Drill-down Output",
+    "role_in_workflow": "Manager Drill-down Output is a agent step. Receives from Executive Brief Generation. Passes to Workflow outcome.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Executive Brief Generation"
+    ],
+    "feeds_into": [
+      "Workflow outcome"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Assemble the final brief, prioritized issues, confidence notes, and side-by-side evidence views for delivery."
+  },
+  "status": "scaffold"
+}
