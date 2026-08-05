@@ -1,0 +1,26 @@
+{
+  "id": "issue-prioritization",
+  "label": "Issue Prioritization",
+  "type": "custom",
+  "agentId": null,
+  "description": "Prioritize issues using current shelf conditions, recurrence signals, severity, and confidence.",
+  "inputs": [],
+  "outputs": [],
+  "reuseDecision": "build",
+  "catalogAgentName": null,
+  "rationale": "no catalog match",
+  "explanation": {
+    "purpose": "Issue Prioritization",
+    "role_in_workflow": "Issue Prioritization is a custom step. Receives from Evidence Confidence Check. Passes to Executive Brief Generation.",
+    "why_it_exists": "no catalog match",
+    "consumes_from": [
+      "Evidence Confidence Check"
+    ],
+    "feeds_into": [
+      "Executive Brief Generation"
+    ],
+    "chat_relationship": "Supports the user-defined workflow requirements.",
+    "execution_summary": "Prioritize issues using current shelf conditions, recurrence signals, severity, and confidence."
+  },
+  "status": "scaffold"
+}
