@@ -1,11 +1,11 @@
 {
   "session_id": "session-1785925042706-xpjtx7",
-  "status": "planning",
+  "status": "error",
   "success": false,
   "scaffold_dir": "C:\\Projectss\\Agentic-LaunchPad\\backend\\data\\generated\\session-1785925042706-xpjtx7",
   "node_count": 12,
-  "cursor_agent_id": "bc-6944ebf4-53d7-4657-8fe4-dce8647d2f3f",
-  "cursor_run_id": "run-70aa9a85-abde-40fd-9bb1-0b8e0a356c45",
+  "cursor_agent_id": "bc-62fb42f5-da89-4fb8-a9e9-349d47f24ee6",
+  "cursor_run_id": "run-33c649a1-ceb3-4b96-a151-ce0fbc5409e1",
   "planner_agent_id": "bc-6944ebf4-53d7-4657-8fe4-dce8647d2f3f",
   "planner_run_id": "run-70aa9a85-abde-40fd-9bb1-0b8e0a356c45",
   "repo_url": "https://github.com/affine-Nikhil-Sarwal/build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f",
@@ -16,10 +16,10 @@
   "github_repo": "build-an-ai-powered-retail-store-performance-and-shelf-audit-assistant-f",
   "attempt_count": 1,
   "github_artifacts_synced": false,
-  "error": null,
+  "error": "Generated intent/analysis router violates INTENT / ANALYSIS ROUTER CONTRACT:\n- agents/generated/analysis_router/agent.py: no structural path forces a vision-inclusive route when has_image is True independent of question-text content (required post-classify force-include outside _heuristic_* helpers)\n- api/routes.py: multimodal router does not read image/attachment presence (has_image / image_metadata / file_path / optional_image)",
   "warnings": [],
   "reuse_violations": [],
   "created_at": "2026-08-05T11:20:12.247296+00:00",
-  "updated_at": "2026-08-05T11:23:42.734279+00:00",
-  "finished_at": null
+  "updated_at": "2026-08-05T11:29:04.858996+00:00",
+  "finished_at": "2026-08-05T11:29:04.858996+00:00"
 }
