@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 _DEFAULT_QUERY = (
-    "Identify visible stock-outs, low facings, misplaced products, and empty shelf gaps. "
-    "Only report what is visibly evident."
+    "Identify every visible product facing, stock-out, low facings, misplaced products, "
+    "and empty shelf gaps. Scan the full row left-to-right and report any product regions "
+    "that may have been missed by upstream detection. Only report what is visibly evident."
 )
 
 

@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     )
     upload_root: str = Field(default="data/uploads", validation_alias="UPLOAD_ROOT")
     roboflow_api_key: str | None = Field(default=None, validation_alias="ROBOFLOW_API_KEY")
+    roboflow_model: str | None = Field(
+        default=None,
+        validation_alias="ROBOFLOW_MODEL",
+        description="Roboflow model path workspace/project/version",
+    )
     azure_storage_connection_string: str | None = Field(
         default=None,
         validation_alias="AZURE_STORAGE_CONNECTION_STRING",
