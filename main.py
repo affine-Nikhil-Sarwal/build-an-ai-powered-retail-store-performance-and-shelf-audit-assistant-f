@@ -20,6 +20,7 @@ from api.routes import router as api_router
 from config.autogen_azure_compat import apply_autogen_azure_compat
 from config.settings import ConfigurationError, get_settings
 from orchestrator.graph import run_workflow_from_node
+from utils.pdf_delivery import attach_pdf_download_if_ready
 
 APP_ROOT = Path(__file__).resolve().parent
 logger = logging.getLogger(__name__)
@@ -112,7 +113,9 @@ def _cli_dry_run(args: argparse.Namespace) -> int:
         payload.setdefault("document_paths", [str(EXAMPLES_PDF)])
     if not payload.get("image_paths") and EXAMPLES_SHELF.exists():
         payload.setdefault("image_paths", [str(EXAMPLES_SHELF)])
+    settings = get_settings(dry_run=True)
     result = run_workflow_from_node("upload-intake", payload)
+    result = attach_pdf_download_if_ready(result, settings=settings)
     print(json.dumps(result, indent=2, default=str))
     return 0
 
@@ -133,6 +136,7 @@ def _cli_run(args: argparse.Namespace) -> int:
     settings.export_to_environ()
     apply_autogen_azure_compat()
     result = run_workflow_from_node("upload-intake", payload)
+    result = attach_pdf_download_if_ready(result, settings=settings)
     print(json.dumps(result, indent=2, default=str))
     return 0
 

@@ -48,6 +48,10 @@ class Settings(BaseSettings):
         validation_alias="AZURE_STORAGE_CONNECTION_STRING",
     )
     dry_run: bool = Field(default=False, validation_alias="DRY_RUN")
+    pdf_generation_timeout_seconds: float = Field(
+        default=2.0,
+        validation_alias="PDF_GENERATION_TIMEOUT_SECONDS",
+    )
 
     def effective_deployment(self) -> str:
         return (
@@ -84,6 +88,7 @@ def get_settings(*, dry_run: bool = False) -> Settings:
             azure_openai_api_version="2024-02-15-preview",
             upload_root=str(root),
             dry_run=True,
+            pdf_generation_timeout_seconds=2.0,
         )
     try:
         settings = Settings()

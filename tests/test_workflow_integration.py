@@ -133,3 +133,7 @@ def test_http_intake_and_health_include_request_id(monkeypatch):
     assert response.headers.get("X-Request-ID")
     body = response.json()
     assert body.get("one_page_narrative_executive_brief")
+    pdf_report = body.get("pdf_summary_report")
+    if pdf_report:
+        assert pdf_report.get("download_url")
+        assert pdf_report.get("job_id")

@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 
 from config.settings import get_settings
 from integrations.azure_openai import AzureOpenAIClient
@@ -19,6 +19,7 @@ from integrations.policy_validator import PolicyValidator
 from integrations.row_detector import RowDetector
 from integrations.vision_quality import VisionQualityChecker
 from orchestrator.graph import run_workflow_from_node
+from utils.pdf_delivery import attach_pdf_download_if_ready_async, pdf_report_path
 
 router = APIRouter()
 
@@ -94,6 +95,7 @@ async def _persist_upload(upload: UploadFile, suffix: str) -> str:
 
 @router.post("/audit/intake", tags=["intake"], summary="Upload report and shelf photos")
 async def audit_intake(
+    request: Request,
     report: UploadFile = File(...),
     shelf_photos: list[UploadFile] = File(...),
 ) -> dict[str, Any]:
@@ -108,4 +110,28 @@ async def audit_intake(
         "document_paths": [report_path],
         "image_paths": image_paths,
     }
-    return await asyncio.to_thread(run_workflow_from_node, "upload-intake", payload)
+    settings = get_settings(dry_run=False)
+    result = await asyncio.to_thread(run_workflow_from_node, "upload-intake", payload)
+    base_url = str(request.base_url).rstrip("/")
+    return await attach_pdf_download_if_ready_async(
+        result,
+        settings=settings,
+        base_url=base_url,
+    )
+
+
+@router.get(
+    "/audit/reports/{job_id}/summary.pdf",
+    tags=["intake"],
+    summary="Download audit summary PDF report",
+)
+async def download_audit_summary_pdf(job_id: str) -> FileResponse:
+    settings = get_settings(dry_run=False)
+    report_path = pdf_report_path(settings, job_id)
+    if not report_path.is_file():
+        raise HTTPException(status_code=404, detail="Audit summary PDF not found")
+    return FileResponse(
+        path=report_path,
+        media_type="application/pdf",
+        filename=f"audit_summary_{job_id}.pdf",
+    )
