@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 from config.settings import Settings
 from integrations.row_detector import RowDetector
+
+logger = logging.getLogger(__name__)
 
 
 def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -> dict[str, Any]:
@@ -24,7 +27,8 @@ def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -
     for image in images:
         path = image.get("path") or image.get("image_path")
         if not path:
-            raise ValueError("Usable shelf image is missing a path")
+            logger.warning("Usable shelf image is missing a path; skipping")
+            continue
         image_paths.append(path)
 
     detector = RowDetector(settings)

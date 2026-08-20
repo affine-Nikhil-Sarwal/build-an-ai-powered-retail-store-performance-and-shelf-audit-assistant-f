@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 import cv2
 import numpy as np
 
-from config.settings import Settings
+from config.settings import ConfigurationError, Settings
 from integrations.base import unwrap_retry_error
+
+logger = logging.getLogger(__name__)
 
 
 class RowDetector:
@@ -20,7 +23,8 @@ class RowDetector:
         path = Path(image_path)
         image = cv2.imread(str(path))
         if image is None:
-            raise ValueError(f"Unable to read shelf image for row detection: {path}")
+            logger.warning("Unable to read shelf image for row detection: %s", path)
+            return [], []
 
         h, w = image.shape[:2]
         row_count = max(2, min(5, h // 180))
@@ -66,7 +70,7 @@ class RowDetector:
     def detect_batch(
         self, image_paths: list[str], crops_dir: Path
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """Run row detection across all images as one batch; fail if any image fails."""
+        """Run row detection across all images as one batch; skip images that fail."""
         if not image_paths:
             return [], []
 
@@ -75,12 +79,11 @@ class RowDetector:
         for image_path in image_paths:
             try:
                 rows, products = self.detect(image_path, crops_dir)
-            except ValueError:
+            except ConfigurationError:
                 raise
             except Exception as exc:
-                raise ValueError(f"Row detection failed for image: {image_path}") from exc
-            if not rows:
-                raise ValueError(f"Row detection failed for image: {image_path}")
+                logger.warning("Row detection failed for image %s: %s", image_path, exc)
+                continue
             all_rows.extend(rows)
             all_products.extend(products)
         return all_rows, all_products
