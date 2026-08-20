@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from agents.generated.issue_prioritization.agent import report_artifact_basename, write_findings_csv
 from config.settings import Settings
+
+
+def _save_findings_csv(prioritized: list[dict[str, Any]], package: dict[str, Any]) -> str | None:
+    storage_root = package.get("storage_root")
+    job_id = package.get("job_id")
+    if not storage_root or not job_id:
+        return None
+    csv_path = Path(storage_root) / f"{report_artifact_basename(job_id)}.csv"
+    return write_findings_csv(prioritized, csv_path)
 
 
 def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -> dict[str, Any]:
@@ -74,10 +85,14 @@ def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -
         "merge_notes": merged.get("merge_notes") or [],
     }
 
-    return {
+    result = {
         "one_page_narrative_executive_brief": narrative,
         "prioritized_issue_list": prioritized,
         "issue_level_drill_down_with_side_by_side_photo_evidence_and_report_excerpts": drill_down,
         "free_form_corrective_action_recommendations": recommendations,
         "confidence_notes_and_insufficient_evidence_flags": confidence_notes,
     }
+    findings_csv_path = _save_findings_csv(prioritized, package)
+    if findings_csv_path:
+        result["findings_csv_path"] = findings_csv_path
+    return result

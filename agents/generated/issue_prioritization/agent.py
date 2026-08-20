@@ -2,12 +2,56 @@
 
 from __future__ import annotations
 
+import csv
+import io
+import json
+from pathlib import Path
 from typing import Any
 
 from config.settings import Settings
 from integrations.azure_openai import AzureOpenAIClient
 
 _SEVERITY_SCORE = {"critical": 100, "high": 80, "medium": 55, "low": 30}
+
+
+def report_artifact_basename(job_id: str) -> str:
+    return f"audit_report_{job_id}"
+
+
+def findings_csv_fieldnames(findings: list[dict[str, Any]]) -> list[str]:
+    names: list[str] = []
+    seen: set[str] = set()
+    for finding in findings:
+        for key in finding:
+            if key not in seen:
+                seen.add(key)
+                names.append(key)
+    return names
+
+
+def _csv_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, default=str)
+    return str(value)
+
+
+def serialize_findings_csv(findings: list[dict[str, Any]]) -> str:
+    fieldnames = findings_csv_fieldnames(findings)
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    for finding in findings:
+        writer.writerow({key: _csv_cell(finding.get(key)) for key in fieldnames})
+    return output.getvalue()
+
+
+def write_findings_csv(findings: list[dict[str, Any]], path: str | Path) -> str:
+    dest = Path(path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(serialize_findings_csv(findings), encoding="utf-8")
+    return str(dest.resolve())
 
 
 def _priority_band(score: float) -> str:

@@ -108,4 +108,10 @@ async def audit_intake(
         "document_paths": [report_path],
         "image_paths": image_paths,
     }
-    return await asyncio.to_thread(run_workflow_from_node, "upload-intake", payload)
+    result = await asyncio.to_thread(run_workflow_from_node, "upload-intake", payload)
+    csv_path = result.get("findings_csv_path")
+    if csv_path:
+        path = Path(csv_path)
+        if path.is_file():
+            result["findings_csv"] = path.read_text(encoding="utf-8")
+    return result
