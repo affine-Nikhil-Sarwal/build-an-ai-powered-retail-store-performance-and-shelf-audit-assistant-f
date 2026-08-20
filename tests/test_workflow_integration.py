@@ -32,7 +32,7 @@ def test_manifest_step_count_matches_graph():
     write_manifest()
     manifest = json.loads((ROOT / "workflow_manifest.json").read_text(encoding="utf-8"))
     assert manifest["step_count"] == len(_EXECUTION_ORDER)
-    assert len(manifest["nodes"]) == 12
+    assert len(manifest["nodes"]) == 11
 
 
 def test_config_raises_configuration_error_when_live_vars_missing(monkeypatch):

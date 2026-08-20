@@ -13,7 +13,6 @@ from config.settings import get_settings
 from utils.json_safe import json_safe
 
 from agents.adapters.drilldown_adapter import build_drilldown_input
-from agents.adapters.normalization_adapter import build_normalization_input
 from agents.adapters.vision_input_adapter import build_vision_input
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -26,7 +25,6 @@ _NODE_ENTRYPOINTS: dict[str, str] = {
     "shelf-image-quality-gate": "agents.generated.shelf_image_quality_gate.agent:run",
     "shelf-row-detection": "agents.generated.shelf_row_detection.agent:run",
     "shelf-vision-analysis": "agents.generated.shelf_vision_analysis.agent:run",
-    "findings-normalization": "agents.generated.findings_normalization.agent:run",
     "evidence-merge-gate": "agents.generated.evidence_merge_gate.agent:run",
     "evidence-confidence-check": "agents.generated.evidence_confidence_check.agent:run",
     "issue-prioritization": "agents.generated.issue_prioritization.agent:run",
@@ -114,14 +112,7 @@ def run_workflow_from_node(node_id: str, payload: dict[str, Any] | None = None) 
     state.update(doc_out)
     state.update(vision_out)
 
-    norm_in = build_normalization_input(
-        report_findings=doc_out.get("report_findings"),
-        visual_findings=vision_out.get("visual_findings"),
-    )
-    norm_out = _invoke("findings-normalization", {**state, **norm_in}, dry_run=dry_run)
-    state.update(norm_out)
-
-    merge_out = _invoke("evidence-merge-gate", {**state, **norm_out}, dry_run=dry_run)
+    merge_out = _invoke("evidence-merge-gate", {**state, **doc_out, **vision_out}, dry_run=dry_run)
     state.update(merge_out)
 
     ocr_quality = None
