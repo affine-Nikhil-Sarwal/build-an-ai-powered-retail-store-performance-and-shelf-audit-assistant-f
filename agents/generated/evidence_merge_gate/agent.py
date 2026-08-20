@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -12,9 +13,72 @@ def _similar(a: str, b: str) -> float:
     return SequenceMatcher(None, (a or "").lower(), (b or "").lower()).ratio()
 
 
+def _from_report(report: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    for finding in report.get("prior_findings") or []:
+        issues.append(
+            {
+                "issue_id": str(uuid.uuid4()),
+                "source": "report",
+                "category": finding.get("category") or "general",
+                "description": finding.get("description") or "",
+                "severity": finding.get("severity") or "medium",
+                "evidence_refs": [
+                    {
+                        "type": "report_excerpt",
+                        "path_or_excerpt": finding.get("report_excerpt") or "",
+                        "row_index": None,
+                        "page_ref": finding.get("page_ref"),
+                    }
+                ],
+                "recurrence_hint": False,
+                "timestamps": {},
+            }
+        )
+    return issues
+
+
+def _from_visual(visual: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    for finding in visual.get("issues") or []:
+        issues.append(
+            {
+                "issue_id": str(uuid.uuid4()),
+                "source": "photo",
+                "category": finding.get("issue_type") or "shelf_issue",
+                "description": finding.get("description") or "",
+                "severity": "high" if finding.get("issue_type") == "stockout" else "medium",
+                "evidence_refs": [
+                    {
+                        "type": "photo",
+                        "path_or_excerpt": finding.get("image_path") or "",
+                        "row_index": finding.get("row_index"),
+                        "page_ref": None,
+                    }
+                ],
+                "recurrence_hint": False,
+                "timestamps": {},
+            }
+        )
+    return issues
+
+
+def _normalize_findings(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    report = payload.get("report_findings")
+    visual = payload.get("visual_findings")
+    if isinstance(report, dict):
+        issues.extend(_from_report(report))
+    if isinstance(visual, dict):
+        issues.extend(_from_visual(visual))
+    return issues
+
+
 def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -> dict[str, Any]:
     normalized = payload.get("normalized_findings") or {}
     raw_issues = list(normalized.get("issues") or [])
+    if not raw_issues:
+        raw_issues = _normalize_findings(payload)
     merged: list[dict[str, Any]] = []
     merge_notes: list[str] = []
     photo_by_category: dict[str, list[dict[str, Any]]] = {}

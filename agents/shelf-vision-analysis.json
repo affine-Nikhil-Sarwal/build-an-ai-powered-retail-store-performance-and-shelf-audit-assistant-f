@@ -11,13 +11,13 @@
   "rationale": "matched Planogram Vision Agent Chain",
   "explanation": {
     "purpose": "Shelf Vision Analysis",
-    "role_in_workflow": "Shelf Vision Analysis is a agent step. Receives from Shelf Row Detection. Passes to Findings Normalization.",
+    "role_in_workflow": "Shelf Vision Analysis is a agent step. Receives from Shelf Row Detection. Passes to Evidence Merge Gate.",
     "why_it_exists": "matched Planogram Vision Agent Chain",
     "consumes_from": [
       "Shelf Row Detection"
     ],
     "feeds_into": [
-      "Findings Normalization"
+      "Evidence Merge Gate"
     ],
     "chat_relationship": "Supports the user-defined workflow requirements.",
     "execution_summary": "Analyze shelf photos for visible availability, count, and placement issues using row-aware vision reasoning."
