@@ -20,7 +20,7 @@ class RowDetector:
         path = Path(image_path)
         image = cv2.imread(str(path))
         if image is None:
-            return [], []
+            raise ValueError(f"Unable to read shelf image for row detection: {path}")
 
         h, w = image.shape[:2]
         row_count = max(2, min(5, h // 180))
@@ -62,6 +62,28 @@ class RowDetector:
                     }
                 )
         return detected_rows, products
+
+    def detect_batch(
+        self, image_paths: list[str], crops_dir: Path
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Run row detection across all images as one batch; fail if any image fails."""
+        if not image_paths:
+            return [], []
+
+        all_rows: list[dict[str, Any]] = []
+        all_products: list[dict[str, Any]] = []
+        for image_path in image_paths:
+            try:
+                rows, products = self.detect(image_path, crops_dir)
+            except ValueError:
+                raise
+            except Exception as exc:
+                raise ValueError(f"Row detection failed for image: {image_path}") from exc
+            if not rows:
+                raise ValueError(f"Row detection failed for image: {image_path}")
+            all_rows.extend(rows)
+            all_products.extend(products)
+        return all_rows, all_products
 
     async def health_check(self) -> dict[str, str]:
         try:
