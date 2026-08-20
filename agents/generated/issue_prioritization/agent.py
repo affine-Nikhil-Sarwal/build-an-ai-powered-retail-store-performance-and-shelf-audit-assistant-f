@@ -50,7 +50,7 @@ def serialize_findings_csv(findings: list[dict[str, Any]]) -> str:
 def write_findings_csv(findings: list[dict[str, Any]], path: str | Path) -> str:
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(serialize_findings_csv(findings), encoding="utf-8")
+    dest.write_text(serialize_findings_csv(findings), encoding="utf-8", newline="")
     return str(dest.resolve())
 
 
