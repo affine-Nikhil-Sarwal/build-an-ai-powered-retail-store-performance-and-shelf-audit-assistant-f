@@ -16,8 +16,14 @@ def build_vision_input(
     products: list[dict[str, Any]] | None,
     audit_query: str | None = None,
 ) -> dict[str, Any]:
+    rows = list(detected_rows or [])
+    product_regions = list(products or [])
+    rows.sort(key=lambda row: (row.get("image_path", ""), row.get("row_index", 0)))
+    product_regions.sort(
+        key=lambda product: (product.get("image_path", ""), product.get("row_index", 0))
+    )
     return {
-        "detected_rows": detected_rows or [],
-        "products": products or [],
+        "detected_rows": rows,
+        "products": product_regions,
         "audit_query": audit_query or _DEFAULT_QUERY,
     }

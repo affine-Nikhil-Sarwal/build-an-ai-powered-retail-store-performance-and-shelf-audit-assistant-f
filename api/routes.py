@@ -98,11 +98,12 @@ async def audit_intake(
     shelf_photos: list[UploadFile] = File(...),
 ) -> dict[str, Any]:
     """Accept audit report (PDF/DOCX) and one or more shelf photos, then run the workflow."""
-    if not shelf_photos:
+    uploads = shelf_photos if isinstance(shelf_photos, list) else [shelf_photos]
+    if not uploads:
         raise HTTPException(status_code=422, detail="At least one shelf photo is required")
 
     report_path = await _persist_upload(report, ".pdf")
-    image_paths = [await _persist_upload(photo, ".jpg") for photo in shelf_photos]
+    image_paths = [await _persist_upload(photo, ".jpg") for photo in uploads]
 
     payload = {
         "document_paths": [report_path],

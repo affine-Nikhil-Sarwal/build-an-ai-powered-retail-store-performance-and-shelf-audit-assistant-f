@@ -20,14 +20,13 @@ def run(payload: dict[str, Any], *, settings: Settings, dry_run: bool = False) -
     crops_dir = Path(storage_root) / "crops"
     crops_dir.mkdir(parents=True, exist_ok=True)
 
-    detector = RowDetector(settings)
-    all_rows: list[dict[str, Any]] = []
-    all_products: list[dict[str, Any]] = []
+    image_paths: list[str] = []
     for image in images:
         path = image.get("path") or image.get("image_path")
         if not path:
-            continue
-        rows, products = detector.detect(path, crops_dir)
-        all_rows.extend(rows)
-        all_products.extend(products)
-    return {"detected_rows": all_rows, "products": all_products}
+            raise ValueError("Usable shelf image is missing a path")
+        image_paths.append(path)
+
+    detector = RowDetector(settings)
+    detected_rows, products = detector.detect_batch(image_paths, crops_dir)
+    return {"detected_rows": detected_rows, "products": products}
